@@ -1,7 +1,7 @@
 # STRBait 
 
 ## SUMMARY
-STRBait is a collection of three programs to automate the discovery of exact short tandem repeats (and its flanking region) from Illumina fastq sequences. 
+STRBait is a collection of three programs to automate the discovery of exact short tandem repeats (and its flanking region) from Illumina fastq sequences. Not yet ready for public consumption.
 
 ## REQUIREMENTS
 STRBait should work on any standard 64 bit Linux environment with 
