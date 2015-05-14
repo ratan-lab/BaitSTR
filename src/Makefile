@@ -30,6 +30,7 @@ clean:
 	-rm $(BINARIES) *.o
 	-rm -rf *.dSYM
 	-rm *.pyc
+	-rm -rf ../bin
 
 extend_STR_reads: utilities.h utilities.c \
 				  sllist.h sllist.c \
@@ -52,3 +53,8 @@ extend_STR_reads: utilities.h utilities.c \
         utilities.o sllist.o clparsing.o kmer.o murmur_hash.o bloom_filter.o \
 	    fastq.o \
 		extend_STR_reads.c -lz -lm
+	mkdir -p ../bin
+	cp fastq.py ../bin/
+	cp select_STR_reads ../bin/
+	cp merge_STR_reads ../bin/
+	cp extend_STR_reads ../bin/
