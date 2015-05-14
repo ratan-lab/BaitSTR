@@ -47,7 +47,7 @@ extend_STR_reads: utilities.h utilities.c \
 	$(CC)  $(CFLAGS) -c murmur_hash.c
 	$(CC)  $(CFLAGS) -c bloom_filter.c
 	$(CC)  $(CFLAGS) -c fastq.c
-	$(CC1) $(CPFLAGS) -I \
+	$(CC1) $(CPFLAGS)  \
 		-o extend_STR_reads \
         utilities.o sllist.o clparsing.o kmer.o murmur_hash.o bloom_filter.o \
 	    fastq.o \
