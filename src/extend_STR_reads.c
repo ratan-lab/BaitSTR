@@ -218,6 +218,226 @@ static void FwKmers(Kmer word,
     }
 }
 
+static Bool CheckForSNPBackwards(const Kmer kmer,
+                                 SparseHashMap& kmers,
+                                 const uint kmer_length) 
+{
+    uint indx;
+    Bool issnp = FALSE;
+
+    Kmer* rvs = (Kmer*)CkalloczOrDie(4 * sizeof(Kmer));
+    Kmer* fws = (Kmer*)CkalloczOrDie(4 * sizeof(Kmer));
+
+    Kmer curr = kmer;
+    Kmer rev  = ReverseComplementKmer(curr, kmer_length);
+
+    RvKmers(curr, rvs, kmer_length);
+    FwKmers(rev, fws, kmer_length);
+    //ConvertKmerToString(curr, kmer_length, &kmer_buffer); 
+    //printf("CheckForSNP: %s\n", kmer_buffer);
+
+    uint num_extensions = 0;
+    Kmer* extensions = (Kmer*)CkalloczOrDie(3 * sizeof(Kmer));
+
+    for (indx = 0; indx < 4; indx++) {
+        if (CheckKmerInSparseHashMap(kmers, rvs[indx]) == TRUE) {
+            if (num_extensions < 3) {
+                extensions[num_extensions++] = rvs[indx];
+            }
+            //ConvertKmerToString(rvs[indx], kmer_length, &kmer_buffer);
+            //printf("Possible extension: %s\n", kmer_buffer);
+        }
+        if (CheckKmerInSparseHashMap(kmers, fws[indx]) == TRUE) {
+            if (num_extensions < 3) {
+                extensions[num_extensions++] = ReverseComplementKmer(fws[indx], kmer_length);
+            }
+            //ConvertKmerToString(fws[indx], kmer_length, &kmer_buffer);
+            //printf("Possible extension: %s\n", kmer_buffer);
+        }
+    }
+    ForceAssert(num_extensions == 2);
+
+    uint numsteps;
+    Kmer extension, extension1, extension2;
+
+    // extend the first candidate
+    numsteps = 0;
+    curr = extensions[0];
+    while (numsteps <= kmer_length) {
+        rev = ReverseComplementKmer(curr, kmer_length);
+        //ConvertKmerToString(curr, kmer_length, &kmer_buffer);
+        //printf("Extension 1: %s\n", kmer_buffer);
+        RvKmers(curr, rvs, kmer_length);
+        FwKmers(rev, fws, kmer_length);
+
+        num_extensions = 0;
+        for (indx = 0; indx < 4; indx++) {
+            if (CheckKmerInSparseHashMap(kmers, rvs[indx]) == TRUE) {
+                num_extensions++;
+                extension = rvs[indx];
+            }
+            if (CheckKmerInSparseHashMap(kmers, fws[indx]) == TRUE) {
+                num_extensions++;
+                extension = ReverseComplementKmer(fws[indx], kmer_length);
+            }
+        }  
+        if (num_extensions != 1) break;
+        curr = extension;
+        numsteps += 1;
+    }
+    if (numsteps != (kmer_length+1)) goto backwardsdecide;
+    extension1 = curr;
+    
+    // extend the second candidate
+    numsteps = 0;
+    curr = extensions[1];
+    while (numsteps <= kmer_length) {
+        rev = ReverseComplementKmer(curr, kmer_length);
+        //ConvertKmerToString(curr, kmer_length, &kmer_buffer);
+        //printf("Extension 2: %s\n", kmer_buffer);
+        RvKmers(curr, rvs, kmer_length);
+        FwKmers(rev, fws, kmer_length);
+
+        num_extensions = 0;
+        for (indx = 0; indx < 4; indx++) {
+            if (CheckKmerInSparseHashMap(kmers, rvs[indx]) == TRUE) {
+                num_extensions++;
+                extension = rvs[indx];
+            }
+            if (CheckKmerInSparseHashMap(kmers, fws[indx]) == TRUE) {
+                num_extensions++;
+                extension = ReverseComplementKmer(fws[indx], kmer_length);
+            }
+        }  
+        if (num_extensions != 1) break;
+        curr = extension;
+        numsteps += 1;
+    }
+    if (numsteps != (kmer_length+1)) goto backwardsdecide;
+    extension2 = curr;
+ 
+    if (extension1 == extension2) issnp = TRUE;    
+
+backwardsdecide:
+    Ckfree(rvs);
+    Ckfree(fws);
+    Ckfree(extensions);
+
+    return issnp;
+}
+
+static Bool CheckForSNPForwards(const Kmer kmer,
+                                SparseHashMap& kmers,
+                                const uint kmer_length) 
+{
+    uint indx;
+    Bool issnp = FALSE;
+
+    Kmer* rvs = (Kmer*)CkalloczOrDie(4 * sizeof(Kmer));
+    Kmer* fws = (Kmer*)CkalloczOrDie(4 * sizeof(Kmer));
+
+    Kmer curr = kmer;
+    Kmer rev  = ReverseComplementKmer(curr, kmer_length);
+
+    FwKmers(curr, fws, kmer_length);
+    RvKmers(rev, rvs, kmer_length);
+    //ConvertKmerToString(curr, kmer_length, &kmer_buffer); 
+    //printf("CheckForSNP: %s\n", kmer_buffer);
+
+    uint num_extensions = 0;
+    Kmer* extensions = (Kmer*)CkalloczOrDie(3 * sizeof(Kmer));
+
+    for (indx = 0; indx < 4; indx++) {
+        if (CheckKmerInSparseHashMap(kmers, fws[indx]) == TRUE) {
+            if (num_extensions < 3) {
+                extensions[num_extensions++] = fws[indx];
+            }
+            //ConvertKmerToString(extensions[num_extensions-1], kmer_length, &kmer_buffer);
+            //printf("Possible extension: %s\n", kmer_buffer);
+        }
+        if (CheckKmerInSparseHashMap(kmers, rvs[indx]) == TRUE) {
+            if (num_extensions < 3) {
+                extensions[num_extensions++] = ReverseComplementKmer(rvs[indx],
+kmer_length);
+            }
+            //ConvertKmerToString(extensions[num_extensions-1], kmer_length, &kmer_buffer);
+            //printf("Possible extension: %s\n", kmer_buffer);
+        }
+    }
+    ForceAssert(num_extensions == 2);
+
+    uint numsteps;
+    Kmer extension, extension1, extension2;
+
+    // extend the first candidate
+    numsteps = 0;
+    curr = extensions[0];
+    while (numsteps <= kmer_length) {
+        rev = ReverseComplementKmer(curr, kmer_length);
+        //ConvertKmerToString(curr, kmer_length, &kmer_buffer);
+        //printf("Extension 1: %s\n", kmer_buffer);
+        FwKmers(curr, fws, kmer_length);
+        RvKmers(rev, rvs, kmer_length);
+
+        num_extensions = 0;
+        for (indx = 0; indx < 4; indx++) {
+            if (CheckKmerInSparseHashMap(kmers, rvs[indx]) == TRUE) {
+                num_extensions++;
+                extension = ReverseComplementKmer(rvs[indx], kmer_length);
+            }
+            if (CheckKmerInSparseHashMap(kmers, fws[indx]) == TRUE) {
+                num_extensions++;
+                extension = fws[indx];
+            }
+        }  
+        if (num_extensions != 1) {
+            //printf("Number of extensions possible: %d\n", num_extensions);
+            break;
+        }
+        curr = extension;
+        numsteps += 1;
+    }
+    if (numsteps != (kmer_length+1)) goto forwardsdecide;
+    extension1 = curr;
+ 
+    // extend the second candidate   
+    numsteps = 0;
+    curr = extensions[1];
+    while (numsteps <= kmer_length) {
+        rev = ReverseComplementKmer(curr, kmer_length);
+        //ConvertKmerToString(curr, kmer_length, &kmer_buffer);
+        //printf("Extension 2: %s\n", kmer_buffer);
+        FwKmers(curr, fws, kmer_length);
+        RvKmers(rev, rvs, kmer_length);
+
+        num_extensions = 0;
+        for (indx = 0; indx < 4; indx++) {
+            if (CheckKmerInSparseHashMap(kmers, rvs[indx]) == TRUE) {
+                num_extensions++;
+                extension = ReverseComplementKmer(rvs[indx], kmer_length);
+            }
+            if (CheckKmerInSparseHashMap(kmers, fws[indx]) == TRUE) {
+                num_extensions++;
+                extension = fws[indx];
+            }
+        }  
+        if (num_extensions != 1) break;
+        curr = extension;
+        numsteps += 1;
+    }
+    if (numsteps != (kmer_length+1)) goto forwardsdecide;
+    extension2 = curr;
+ 
+    if (extension1 == extension2) issnp = TRUE;    
+
+forwardsdecide:
+    Ckfree(rvs);
+    Ckfree(fws);
+    Ckfree(extensions);
+
+    return issnp;
+}
+
 /*
  * Simple Algorithm 
  * ----------------
@@ -295,12 +515,17 @@ static char* ExtendBackward(SparseHashMap& kmers,
         }
 
         // quit, if there is more than one extension possible
-        if (num_extensions != 1) {
-            //if(num_extensions == 0){
-            //    fprintf(stderr,"Backward: No extensions possible\n");
-            //}else{
-            //    fprintf(stderr,"Backward: More than one extension possible\n");
-            //}
+        if (num_extensions == 2) {
+            //fprintf(stderr,"Backward: More than one extension possible\n");
+            // this could be rescued if this is only a substitution polymorphism
+            if (CheckForSNPBackwards(curr, kmers, kmer_length) == FALSE) {
+                break;
+            }
+        } else if (num_extensions == 1) {
+        } else if (num_extensions == 0) {
+            //fprintf(stderr,"Backward: No extensions possible\n");
+            break;
+        } else {
             break;
         }
         rev_extension = ReverseComplementKmer(extension, kmer_length);
@@ -440,12 +665,17 @@ static char* ExtendForward(SparseHashMap& kmers,
         }
 
         // quit, if there is more than one extension possible
-        if (num_extensions != 1) {
-            //if(num_extensions == 0){
-            //    fprintf(stderr, "Forward: No extensions possible\n");
-            //}else{
-            //    fprintf(stderr, "Forward: More than one extension possible\n");
-            //}
+        if (num_extensions == 2) {
+            //fprintf(stderr,"Forward: More than one extension possible\n");
+            // this could be rescued if this is only a substitution polymorphism
+            if (CheckForSNPForwards(curr, kmers, kmer_length) == FALSE) {
+                break;
+            }
+        } else if (num_extensions == 1) { 
+        } else if (num_extensions == 0) {
+            //fprintf(stderr,"Forward: No extensions possible\n");
+            break;
+        } else {
             break;
         }
         rev_extension = ReverseComplementKmer(extension, kmer_length);
