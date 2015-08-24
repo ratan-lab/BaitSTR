@@ -23,7 +23,7 @@ Make sure you have installed Google Sparsehash before moving to the next step.
 zlib, python, gcc are normally pre-installed on most Linux systems. If not,
 please go ahead and install them as well.
 
-Modify the src/Makefile to add the Google Sparsehash header files to line 50
+Modify the src/Makefile to add the Google Sparsehash header files to line 51
 after `-I`. Once that is done please do the following in the top level directory
 of the distribution:
 ```
