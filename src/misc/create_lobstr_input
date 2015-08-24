@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+
+"""
+    usage:
+        create_lobstr_input [options] < trf.out
+
+    where the options are:
+        -h,--help : print usage and quit
+        -d,--debug: print debug information
+
+    Once you have a fasta file of targets for that can be used as baits, this 
+    script helps with genotyping those locations using lobSTR. We use Tandem
+    Repeats Finder on the target fasta file, and the output is supplied to this
+    script which selects the STR with the highest score from each block. The
+    expected command line use is as follows:
+    
+    trf targetSeqs.fa 2 7 7 80 10 14 500 -ngs -h \
+    | ./create_lobstr_input > input.bed
+
+    python lobstr_index.py --str input.bed \
+    --ref targetSeqs.fa --out reference --verbose
+
+    python GetSTRInfo.py input.bed targetSeqs.fa > strinfo.tab
+
+    "trf" refers to the Tandem repeats finder, and the command line should be
+    used as suggested. Some of the parameters are currently hard-coded in this 
+    script. 
+    targetSeqs.fa refers to the fasta file of target sequences (baits) generated
+    for the project.
+    lobstr_index.py and GetSTRInfo.py are scripts that come with the lobSTR
+    package.
+    strinfo.tab should be used with allelotype using the following command:
+    
+    allelotype \
+       --command classify \
+       --bam strout.sorted.bam \
+       --noise_model lobSTR/models/illumina_v3.pcrfree \
+       --out final \
+       --strinfo strinfo.tab \
+       --index-prefix reference/lobSTR_
+"""
+
+from sys import argv, stderr, stdin, exit, stdout
+from getopt import getopt, GetoptError
+
+__author__ = "Aakrosh Ratan"
+__email__  = "ratan@bx.psu.edu"
+
+# do we want the debug information to be printed?
+debug_flag = False
+
+def main():
+    trfs = {}
+    ordr = []
+
+    for line in stdin:
+        if line.startswith("@"):
+            name = line[1:].strip()
+            ordr.append(name)
+            continue
+        else:
+            tokens = line.strip().split()
+            start  = int(tokens[0])
+            unitsize = int(tokens[2])
+            numinref = int(float(tokens[3]))
+            end    = start + numinref*unitsize
+
+            if start < 100 : continue
+            if unitsize < 2: continue
+            if unitsize >= 7: continue
+            if unitsize == 2 and numinref < 7: continue
+            if unitsize != 2 and numinref < 5: continue
+
+            if name not in trfs:
+                trfs[name] = []
+            trfs[name].append((float(tokens[5]),tokens))
+
+    for x in ordr:
+        chromtrfs = trfs.get(x, [])
+        if len(chromtrfs) == 0: continue
+        chromtrfs.sort()
+    
+        # I only want to print the STR with the highest score from each block
+        info = chromtrfs[0][1]
+        output = [x]
+        output.extend(info)
+        print "\t".join(output)
+
+if __name__ == "__main__":
+    try:
+        opts, args = getopt(argv[1:], "hd",["help", "debug"])
+    except GetoptError, err:
+        print str(err)
+        print >> stderr, __doc__
+        exit(2) 
+
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            print >> stderr, __doc__
+            exit()
+        elif o in ("-d", "--debug"):
+            debug_flag = True
+        else:
+            assert False, "unhandled option"
+
+    if len(args) != 0:
+        print >> stderr, __doc__
+        exit(3)
+
+    main()
