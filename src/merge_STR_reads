@@ -395,6 +395,7 @@ def main(klength, filename, min_threshold, max_threshold):
             del blocks[(motif,lflank,rflank)]
 
     records.close()
+    print >> stderr, "Processed %d reads" % indx        
 
     # Lets print out the merged reads
     indx = 1
