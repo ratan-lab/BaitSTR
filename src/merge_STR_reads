@@ -200,7 +200,7 @@ def Align(x, y, score = ScoreParam(-3,1,-1)):
     # return the opt score and the best location
     return identity,num_gaps
 
-def AlignFlanks(block, s, motif, copies, zstart, end):
+def AlignFlanks(block, s, motif, copies, zstart, end, max_threshold):
     assert s.seq[zstart:end] == motif * copies
 
     global pid_threshold
@@ -241,6 +241,9 @@ def AlignFlanks(block, s, motif, copies, zstart, end):
 
     mflank1 = (seq1[zstart1:end1], qual1[zstart1:end1])
     mflank2 = (seq2[zstart2:end2], qual2[zstart2:end2])
+
+    if len(block[5]) > max_threshold:
+        return block
 
     # If I am here then these this block and this read seem like they support
     # the same STR. Lets combine them to create a new block
@@ -357,9 +360,7 @@ def main(klength, filename, min_threshold, max_threshold):
 
         if (motif,lflank,rflank) in blocks:
             for block in blocks[(motif,lflank,rflank)]:
-                if len(block[5]) > max_threshold: 
-                    continue
-                merged_block = AlignFlanks(block,s,motif,copies,zstart,end)
+                merged_block = AlignFlanks(block,s,motif,copies,zstart,end,max_threshold)
                 if debug_flag: print >> stderr, ""
                 if merged_block != None:
                     aligned_block = block
@@ -378,9 +379,7 @@ def main(klength, filename, min_threshold, max_threshold):
 
             if (motif,lflank,rflank) in blocks:
                 for block in blocks[(motif,lflank,rflank)]:
-                    if len(block[5]) > max_threshold:
-                        continue
-                    merged_block=AlignFlanks(block,s,motif,copies,zstart,end)
+                    merged_block=AlignFlanks(block,s,motif,copies,zstart,end,max_threshold)
                     if debug_flag: print >> stderr, ""
                     if merged_block != None:
                         aligned_block = block
@@ -408,7 +407,9 @@ def main(klength, filename, min_threshold, max_threshold):
             copies = [str(x.split("\t")[2]) for x in names]
             copies = list(set(copies))
 
-            if len(names) >= min_threshold and len(copies) <= 2:
+            if len(names) >= min_threshold and \
+               len(names) <= max_threshold and \
+               len(copies) <= 2:
                 print "@Block%d\t%s\t%s\t%d\t%d" % \
                     (indx,motif,",".join(copies),zstart,end)
                 print sequence
