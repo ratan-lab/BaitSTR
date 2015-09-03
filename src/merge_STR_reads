@@ -357,6 +357,8 @@ def main(klength, filename, min_threshold, max_threshold):
 
         if (motif,lflank,rflank) in blocks:
             for block in blocks[(motif,lflank,rflank)]:
+                if len(block[5]) > max_threshold: 
+                    continue
                 merged_block = AlignFlanks(block,s,motif,copies,zstart,end)
                 if debug_flag: print >> stderr, ""
                 if merged_block != None:
@@ -376,6 +378,8 @@ def main(klength, filename, min_threshold, max_threshold):
 
             if (motif,lflank,rflank) in blocks:
                 for block in blocks[(motif,lflank,rflank)]:
+                    if len(block[5]) > max_threshold:
+                        continue
                     merged_block=AlignFlanks(block,s,motif,copies,zstart,end)
                     if debug_flag: print >> stderr, ""
                     if merged_block != None:
