@@ -30,6 +30,7 @@
 from sys import argv, stderr, stdin, exit, stdout
 from getopt import getopt, GetoptError
 from profile import run
+from time import time
 
 from fastq import *
 
@@ -321,13 +322,14 @@ def main(klength, filename, min_threshold, max_threshold):
 
     # Store all the merged reads here
     blocks = {}
+    start_time = time()
 
     indx = 0
     for r in records:
         s = r.fastqsequence
         indx += 1
         if indx % 1000000 == 0:
-            print >> stderr, "Processing read %d" % indx        
+            print >> stderr, "Processing read %d [%d sec. elapsed]" % (indx, time() - start_time)        
 
         if debug_flag:
             print >> stderr, "-"*79
@@ -398,7 +400,7 @@ def main(klength, filename, min_threshold, max_threshold):
             del blocks[(motif,lflank,rflank)]
 
     records.close()
-    print >> stderr, "Processed %d reads" % indx        
+    print >> stderr, "Processed %d reads [%d sec. elapsed]" % (indx, time() - start_time)        
 
     # Lets print out the merged reads
     indx = 1
