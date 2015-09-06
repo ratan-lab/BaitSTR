@@ -320,7 +320,7 @@ def FastAlignFlanks(block, s, motif, copies, zstart, end):
 def main(klength, filename, min_threshold, max_threshold):
     records = fastq(filename)
 
-    # Store all the merged reads here
+    # Store all the merged reads here. 
     blocks = {}
     start_time = time()
 
@@ -396,8 +396,6 @@ def main(klength, filename, min_threshold, max_threshold):
         if (motif,lflank,rflank) not in blocks: 
             blocks[(motif,lflank,rflank)] = []
         blocks[(motif,lflank,rflank)].append((zstart,end,1,s.seq,s.qual,[s.name]))
-        if len(blocks[(motif,lflank,rflank)]) > max_threshold: 
-            del blocks[(motif,lflank,rflank)]
 
     records.close()
     print >> stderr, "Processed %d reads [%d sec. elapsed]" % (indx, time() - start_time)        
