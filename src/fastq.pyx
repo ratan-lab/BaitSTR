@@ -13,7 +13,7 @@ __author__ = "Aakrosh Ratan"
 __email__  = "ratan@bx.psu.edu"
 
 class fastqsequence:
-    def __init__(self, name, seq, qual):
+    def __init__(self, char* name, char* seq, char* qual):
         self.name = name
         self.seq  = seq
         self.qual = qual
@@ -46,7 +46,7 @@ class fastqsequence:
         self.qual = self.qual[::-1]
 
 class fastq:
-    def __init__(self, filename):
+    def __init__(self, char* filename):
         if filename[-3:] == ".gz":
             self.file = gzip.open(filename, "r")
         else:
@@ -93,11 +93,11 @@ class fastq:
     
         return self
 
-if __name__ == "__main__": 
-    records = fastq(argv[1])
-        
-    for r in records:
-        s = r.fastqsequence
-        print s
-
-    records.close()
+#if __name__ == "__main__": 
+#    records = fastq(argv[1])
+#        
+#    for r in records:
+#        s = r.fastqsequence
+#        print s
+#
+#    records.close()
