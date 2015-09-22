@@ -191,7 +191,7 @@ def AlignFlanks(block, s, motif, copies, zstart, end, max_threshold,
         char* qual1
 
     # The first sequence is from a block of reads
-    zstart1,end1,support1,seq1,qual1,names = block
+    zstart1,end1,support1,seq1,qual1,nc = block
 
     # This is a fastq sequence I am looking at the first time
     cdef int zstart2 = zstart
@@ -201,7 +201,6 @@ def AlignFlanks(block, s, motif, copies, zstart, end, max_threshold,
     cdef char* qual2 = s.qual
 
     if debug_flag:
-        print >> stderr, "Aligning against %s" % ",".join(names)
         print >> stderr, "Block sequence: %s" % seq1
     # Lets look at the matches on the left of the motif
     lflank1 = (seq1[:zstart1], qual1[:zstart1])
@@ -238,13 +237,13 @@ def AlignFlanks(block, s, motif, copies, zstart, end, max_threshold,
     mseq,mqual = Consensus(mflank1, mflank2)
     rseq,rqual = Consensus(rflank1, rflank2)
     
-    names.append(s.name)
+    nc.add(s.name.split()[2])
     return (len(lseq),
             len(lseq) + len(mseq),
             support1 + 1,
             lseq + mseq + rseq,
             lqual + mqual + rqual,
-            names)
+            nc)
 
 def merge_str_reads(int klength, char* filename, int min_threshold, 
                     int max_threshold,
@@ -260,7 +259,8 @@ def merge_str_reads(int klength, char* filename, int min_threshold,
         s = r.fastqsequence
         indx += 1
         if indx % 1000000 == 0:
-            print >> stderr, "Processing read %d [%d sec. elapsed]" % (indx, time() - start_time)        
+            print >> stderr, "Processing read %d [%d sec. elapsed]" \
+                   % (indx, time() - start_time)        
 
         if debug_flag:
             print >> stderr, "-"*79
@@ -292,14 +292,13 @@ def merge_str_reads(int klength, char* filename, int min_threshold,
         rflank = s.seq[end : end + klength]
 
         if (motif,lflank,rflank) in blocks:
-            for block in blocks[(motif,lflank,rflank)]:
-                merged_block = AlignFlanks(block,s,motif,copies,zstart,end,
-                                          max_threshold,pid_threshold,debug_flag)
-                if debug_flag: print >> stderr, ""
-                if merged_block != None:
-                    aligned_block = block
-                    does_align = True
-                    break
+            block = blocks[(motif,lflank,rflank)]
+            merged_block = AlignFlanks(block,s,motif,copies,zstart,end,
+                                       max_threshold,pid_threshold,debug_flag)
+            if debug_flag: print >> stderr, ""
+            if merged_block != None:
+                aligned_block = block
+                does_align = True
 
         if does_align == False:
             motif  = m2
@@ -312,23 +311,20 @@ def merge_str_reads(int klength, char* filename, int min_threshold,
             rflank = s.seq[end : end + klength]
 
             if (motif,lflank,rflank) in blocks:
-                for block in blocks[(motif,lflank,rflank)]:
-                    merged_block=AlignFlanks(block,s,motif,copies,zstart,end,
-                                          max_threshold,pid_threshold,debug_flag)
-                    if debug_flag: print >> stderr, ""
-                    if merged_block != None:
-                        aligned_block = block
-                        does_align = True
-                        break
+                block = blocks[(motif,lflank,rflank)]
+                merged_block=AlignFlanks(block,s,motif,copies,zstart,end,
+                                         max_threshold,pid_threshold,debug_flag)
+                if debug_flag: print >> stderr, ""
+                if merged_block != None:
+                    aligned_block = block
+                    does_align = True
 
         if does_align == True:
-            blocks[(motif,lflank,rflank)].remove(aligned_block)
-            blocks[(motif,lflank,rflank)].append(merged_block)
+            blocks[(motif,lflank,rflank)] = merged_block
             continue
 
         if (motif,lflank,rflank) not in blocks: 
-            blocks[(motif,lflank,rflank)] = []
-        blocks[(motif,lflank,rflank)].append((zstart,end,1,s.seq,s.qual,[s.name]))
+            blocks[(motif,lflank,rflank)] = (zstart,end,1,s.seq,s.qual,set(s.name.split()[2]))
 
     records.close()
     print >> stderr, "Processed %d reads [%d sec. elapsed]" % (indx, time() - start_time)        
@@ -336,24 +332,23 @@ def merge_str_reads(int klength, char* filename, int min_threshold,
     # Lets print out the merged reads
     indx = 1
     for (motif,lflank,rflank),reads in blocks.items():
-        for zstart,end,num_members,sequence,qual,names in reads:
-            copies = [str(x.split("\t")[2]) for x in names]
-            copies = list(set(copies))
+        zstart,end,num_members,sequence,qual,nc  = reads
+        copies = list(nc)
 
-            if len(names) >= min_threshold and \
-               len(names) <= max_threshold and \
-               len(copies) <= 2:
-                print "@Block%d\t%s\t%s\t%d\t%d" % \
-                    (indx,motif,",".join(copies),zstart,end)
-                print sequence
-                print "+"
-                print qual
+        if num_members >= min_threshold and \
+           num_members <= max_threshold and \
+           len(copies) <= 2:
+            print "@Block%d\t%s\t%s\t%d\t%d" % \
+                (indx,motif,",".join(copies),zstart,end)
+            print sequence
+            print "+"
+            print qual
     
-                if debug_flag:
-                    print >> stderr, "Block%d\t%s\t%s\t%d\t%d" % \
-                    (indx,motif,",".join(copies),zstart,end)
-                    print >> stderr, sequence
-                    for name in names:
-                        print >> stderr, "\t%s" % name
+            if debug_flag:
+                print >> stderr, "Block%d\t%s\t%s\t%d\t%d" % \
+                (indx,motif,",".join(copies),zstart,end)
+                print >> stderr, sequence
+                for name in names:
+                    print >> stderr, "\t%s" % name
 
-                indx += 1  
+            indx += 1  
