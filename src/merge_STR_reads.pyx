@@ -246,61 +246,6 @@ def AlignFlanks(block, s, motif, copies, zstart, end, max_threshold,
             lqual + mqual + rqual,
             names)
 
-
-#def FastAlignFlanks(block, s, motif, copies, zstart, end, pid_threshold):
-#    assert s.seq[zstart:end] == motif * copies
-#
-#    # The first sequence is from a block of reads
-#    zstart1,end1,support1,seq1,qual1,names = block
-#
-#    # This is a fastq sequence I am looking at the first time
-#    zstart2 = zstart
-#    end2 = end
-#
-#    seq2 = s.seq
-#    qual2 = s.qual
-#
-#    if debug_flag:
-#        print >> stderr, "Aligning against %s" % ",".join(names)
-#        print >> stderr, "Block sequence: %s" % seq1
-#    # Lets look at the matches on the left of the motif
-#    lflank1 = (seq1[:zstart1], qual1[:zstart1])
-#    lflank2 = (seq2[:zstart2], qual2[:zstart2])
-#
-#    pid = PercentIdentity(lflank1[0][::-1], lflank2[0][::-1])
-#    if pid < pid_threshold:
-#        if debug_flag:
-#            print >> stderr, "Low percent identity (%2.2f) for the left flank."\
-#            % pid
-#        return None
-#   
-#    rflank1 = (seq1[end1:], qual1[end1:])
-#    rflank2 = (seq2[end2:], qual2[end2:])
-#
-#    pid = PercentIdentity(rflank1[0], rflank2[0])
-#    if pid < pid_threshold: 
-#        if debug_flag:
-#            print >> stderr, "Low percent identity (%2.2f) for the right flank."\
-#            % pid
-#        return None
-#
-#    mflank1 = (seq1[zstart1:end1], qual1[zstart1:end1])
-#    mflank2 = (seq2[zstart2:end2], qual2[zstart2:end2])
-#
-#    # If I am here then these this block and this read seem like they support
-#    # the same STR. Lets combine them to create a new block
-#    lseq,lqual = Consensus(lflank1, lflank2, True)
-#    mseq,mqual = Consensus(mflank1, mflank2)
-#    rseq,rqual = Consensus(rflank1, rflank2)
-#    
-#    names.append(s.name)
-#    return (len(lseq),
-#            len(lseq) + len(mseq),
-#            support1 + 1,
-#            lseq + mseq + rseq,
-#            lqual + mqual + rqual,
-#            names)
-
 def merge_str_reads(int klength, char* filename, int min_threshold, 
                     int max_threshold,
                     float pid_threshold, int debug_flag):
