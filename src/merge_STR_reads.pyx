@@ -144,11 +144,12 @@ cdef float Align(char* x, char* y, float pid_threshold,
     cdef int max_score = best
     i = optlox
     j = optloy
+    #print >> stderr, max_score, optlox, xmax, optloy, ymax
 
     cdef: 
         int num_mismatches = 0
         int num_matches = 0
-        int num_gaps = 0
+        int num_gaps = ymax - optloy - 1
 
     while max_score > 0:
         if B[i][j] == 0:
