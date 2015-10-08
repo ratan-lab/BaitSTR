@@ -10,6 +10,7 @@ STRBait should work on any standard 64 bit Linux environment with
 - Python version >= 2.6
 - Google Sparsehash (http://code.google.com/p/sparsehash)
 - zlib (http://zlib.net)
+- Cython
 
 ## ACKNOWLEDGEMENTS
 STRBait uses 128 bit version of MurmurHash as the hash function. MurmurHash

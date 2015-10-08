@@ -62,15 +62,8 @@ install: fastq.pyx \
 	    fastq_seq.o \
 		extend_STR_reads.c -lz -lm
 	mkdir -p ../bin
-	cp fastq.so ../bin/
-	cp select_STR_reads.so ../bin/
-	cp select_STR_reads ../bin/
-	cp merge_STR_reads.so ../bin/
-	cp merge_STR_reads ../bin/
-	cp extend_STR_reads ../bin/
 	-rm select_STR_reads.c
 	-rm merge_STR_reads.c
 	-rm fastq.c
-	-rm *.so
 	-rm *.o
 	-rm -rf *.dSYM
