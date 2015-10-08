@@ -126,7 +126,7 @@ def MatchPattersAndReportBest(string, patterns, remove_homopolymers):
             motif = match.group(2)
             copies = len(STR)/len(motif)
             start = match.start()
-            end = match.end()
+            end = start + len(STR)
 
             # Special case: motif's with Ns are not desirable. Lets throw
             # those away
@@ -136,10 +136,10 @@ def MatchPattersAndReportBest(string, patterns, remove_homopolymers):
 
             # Throw away matches that do not satisfy the flank requr.
             if start < flanking_distance: 
-                if debug_flag: print >> stderr, "Insufficient 5' flank."
+                if debug_flag: print >> stderr, "Insufficient 5' flank.: %s" % start
                 continue
             if (len(string) - end) < flanking_distance: 
-                if debug_flag: print >> stderr, "Insufficient 3' flank."
+                if debug_flag: print >> stderr, "Insufficient 3' flank.: %s" % (len(string) - end)
                 continue
                 
             # ignore homopolymer runs if that is requested by the user
@@ -293,7 +293,7 @@ def main(filenames, num_minimum_copies, flanking_distance,
     # describe STRs.
     patterns = []
     for k in only_k_mers:
-        patterns.append(r'((?=(.{%d}))\2{%d,})' % (k,num_minimum_copies))
+        patterns.append(r'(?=((?=(.{%d}))\2{%d,}))' % (k,num_minimum_copies))
 
     # Is this a run where we want to check the reason why certain STRs were not
     # found? Read the file to save the STRs I am to look out for.
@@ -314,7 +314,7 @@ def main(filenames, num_minimum_copies, flanking_distance,
             if match == None:
                 if debug_flag: print >> stderr, "0 valid matches."
                 continue
-            if debug_flag: print >> stderr, "Found %s:%d." % (motif,copies)  
+            if debug_flag: print >> stderr, match   
 
             # What about the matches when the read is reverse complemented?
             rc_match = MatchPattersAndReportBest(ReverseComplement(s.seq),
