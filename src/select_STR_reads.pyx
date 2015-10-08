@@ -101,7 +101,8 @@ def IsHomopolymer(motif):
 #
 #    return match
 
-def MatchPattersAndReportBest(string, patterns, remove_homopolymers):
+def MatchPattersAndReportBest(string, patterns, remove_homopolymers,
+                              flanking_distance, debug_flag):
     """Find and return the best motif:copies in this string.
 
     In cases where the STR could be from 2mer and 4mer for example, I will always
