@@ -1,4 +1,4 @@
-#include "fastq.h"
+#include "fastq_seq.h"
 
 // open the fastq file corresponding to the name of the file
 FastqSequence* OpenFastqSequence(const char* const file,

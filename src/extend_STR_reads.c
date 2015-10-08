@@ -7,7 +7,7 @@ extern "C" {
 #include "utilities.h"
 #include "clparsing.h"
 #include "kmer.h"
-#include "fastq.h"
+#include "fastq_seq.h"
 #include "bloom_filter.h"
 }
 
