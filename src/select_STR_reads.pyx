@@ -53,8 +53,55 @@ def IsHomopolymer(motif):
         return True
     return False
 
-def MatchPattersAndReportBest(string, patterns, remove_homopolymers,
-                              flanking_distance, debug_flag):
+#def MatchPattersAndReportBest(string, patterns, remove_homopolymers,
+#                              flanking_distance, debug_flag):
+#    """Find and return the best motif:copies in this string.
+#
+#    In cases where the STR could be from 2mer and 4mer for example, I will always
+#    report the 2mer. This is expected behavior as per Logan.
+#    """
+#    matches = []
+#    for pattern in patterns:
+#        for match in re.finditer(pattern, string, flags = re.IGNORECASE):
+#            STR = match.group(1)
+#            motif = match.group(2)
+#            copies = len(STR)/len(motif)
+#            start = match.start()
+#            end = match.end()
+#
+#            # Special case: motif's with Ns are not desirable. Lets throw
+#            # those away
+#            if motif.find("N") != -1: 
+#                if debug_flag: print >> stderr, "N in motif."
+#                continue
+#
+#            # Throw away matches that do not satisfy the flank requr.
+#            if start < flanking_distance: 
+#                if debug_flag: print >> stderr, "Insufficient 5' flank."
+#                continue
+#            if (len(string) - end) < flanking_distance: 
+#                if debug_flag: print >> stderr, "Insufficient 3' flank."
+#                continue
+#                
+#            # ignore homopolymer runs if that is requested by the user
+#            if remove_homopolymers == True and IsHomopolymer(motif):
+#                continue
+#
+#            # This match could be interesting. Lets save it.
+#            matches.append((len(STR), copies, STR, motif, start, end))
+#
+#    if len(matches) == 0: return None
+#
+#    # Sort so that the longest stretch of STR's is the first match. If 
+#    # two matches are equal in length, then I want the one with more
+#    # number of copies to be the first match. The second member of the
+#    # stored set assures of that.
+#    matches.sort(reverse = True)
+#    match = matches[0]
+#
+#    return match
+
+def MatchPattersAndReportBest(string, patterns, remove_homopolymers):
     """Find and return the best motif:copies in this string.
 
     In cases where the STR could be from 2mer and 4mer for example, I will always
@@ -67,26 +114,13 @@ def MatchPattersAndReportBest(string, patterns, remove_homopolymers,
             motif = match.group(2)
             copies = len(STR)/len(motif)
             start = match.start()
-            end = match.end()
+            end = start + len(STR)
 
             # Special case: motif's with Ns are not desirable. Lets throw
             # those away
             if motif.find("N") != -1: 
                 if debug_flag: print >> stderr, "N in motif."
                 continue
-
-            # Throw away matches that do not satisfy the flank requr.
-            if start < flanking_distance: 
-                if debug_flag: print >> stderr, "Insufficient 5' flank."
-                continue
-            if (len(string) - end) < flanking_distance: 
-                if debug_flag: print >> stderr, "Insufficient 3' flank."
-                continue
-                
-            # ignore homopolymer runs if that is requested by the user
-            if remove_homopolymers == True and IsHomopolymer(motif):
-                continue
-                
 
             # This match could be interesting. Lets save it.
             matches.append((len(STR), copies, STR, motif, start, end))
@@ -99,8 +133,48 @@ def MatchPattersAndReportBest(string, patterns, remove_homopolymers,
     # stored set assures of that.
     matches.sort(reverse = True)
     match = matches[0]
+    motif = match[3]
+    start = match[4]
+    end   = match[5]
+    # Throw away matches that do not satisfy the flank requr.
+    if start < flanking_distance: 
+        if debug_flag: print >> stderr, "Insufficient 5' flank.: %s" % start
+        return None
+    if (len(string) - end) < flanking_distance: 
+        if debug_flag: 
+            print >> stderr, "Insufficient 3' flank.: %s" % (len(string)-end)
+        return None
+                
+    # ignore homopolymer runs if that is requested by the user
+    if remove_homopolymers == True and IsHomopolymer(motif):
+        return None
 
     return match
+
+    #eligible_match = None
+    #
+    #for match in matches:
+    #    motif = match[3]
+    #    start = match[4]
+    #    end   = match[5]
+    #    # Throw away matches that do not satisfy the flank requr.
+    #    if start < flanking_distance: 
+    #        if debug_flag: print >> stderr, "Insufficient 5' flank.: %s" % start
+    #        continue
+    #    if (len(string) - end) < flanking_distance: 
+    #        if debug_flag: 
+    #            print >> stderr, "Insufficient 3' flank.: %s" % (len(string)-end)
+    #        continue
+    #                
+    #    # ignore homopolymer runs if that is requested by the user
+    #    if remove_homopolymers == True and IsHomopolymer(motif):
+    #        continue
+
+    #    eligible_match = match
+    #    break
+
+    #return eligible_match
+
 
 def PrintSequence(s, match, rc_match, illumina_quals):
     """Print this fastq sequence with some additional information about the STR.
