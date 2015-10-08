@@ -34,9 +34,11 @@ This should create a `bin` folder and copy all the required binaries to it.
 Please make sure that following files are in the `bin` folder:
 ```
 extend_STR_reads
-fastq.py
+fastq.so
 merge_STR_reads
+merge_STR_reads.so
 select_STR_reads
+select_STR_reads.so
 ```
 ## DESCRIPTION
 STRBait consists of 3 modules that should be run sequentially to find exact STR's
