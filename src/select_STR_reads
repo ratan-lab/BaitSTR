@@ -63,57 +63,6 @@ __email__  = "ratan@bx.psu.edu"
 # Do we want the debug information to be printed?
 debug_flag = False
 
-def main(filenames, num_minimum_copies, flanking_distance,
-         illumina_quals, check_strs, only_k_mers, remove_homopolymers):
-    """Find the reads that harbor STR and satisfy certain conditions.
-    """
-    # STRs are short sequences of DNA, normally of length 2-6 base pairs, that 
-    # are repeated numerous times. The following python pattern can accurately 
-    # describe STRs.
-    patterns = []
-    for k in only_k_mers:
-        patterns.append(r'(?=((?=(.{%d}))\2{%d,}))' % (k,num_minimum_copies))
-
-    # Is this a run where we want to check the reason why certain STRs were not
-    # found? Read the file to save the STRs I am to look out for.
-    to_check = ReadSTRList(check_strs)
-
-    for filename in filenames:
-        records = fastq(filename)
-
-        for r in records:
-            s = r.fastqsequence
-            if debug_flag: 
-                print >> stderr, "-"*79
-                print >> stderr, "%s" % s.name
-
-            # Does this sequence have a short tandem repeat in it?
-            match = MatchPattersAndReportBest(s.seq, 
-                                              patterns, remove_homopolymers)
-            if match == None:
-                if debug_flag: print >> stderr, "0 valid matches."
-                continue
-            if debug_flag: print >> stderr, match   
-
-            # What about the matches when the read is reverse complemented?
-            rc_match = MatchPattersAndReportBest(ReverseComplement(s.seq),
-                                                 patterns, remove_homopolymers)
-            if rc_match == None:
-                if debug_flag: print >> stderr, "0 valid matches."
-                continue
-
-            # Lets register the fact that we found this STR associated read.
-            if check_strs: RegisterSTR(s.seq, match, rc_match, to_check)
-
-            # Print the read details along with the motif, position of the STR
-            PrintSequence(s, match, rc_match)
-
-        records.close()
-        print >> stderr, "Done processing %s" % filename
-                    
-    if check_strs:
-        PrintPerformanceLog(to_check)
-
 if __name__ == "__main__":
     try:
         opts, args = getopt(argv[1:], "hdn:f:ic:v23456r",["help", "debug", "numcopies=", "flanks=", "illumina", "check=", "version", "2mer", "3mer", "4mer", "5mer", "6mer", "removehm"])
