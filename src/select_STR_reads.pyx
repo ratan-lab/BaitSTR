@@ -310,7 +310,8 @@ def select_str_reads(filenames, num_minimum_copies, flanking_distance,
     # describe STRs.
     patterns = []
     for k in only_k_mers:
-        patterns.append(r'((?=(.{%d}))\2{%d,})' % (k,num_minimum_copies))
+        #patterns.append(r'((?=(.{%d}))\2{%d,})' % (k,num_minimum_copies))
+        patterns.append(r'(?=((?=(.{%d}))\2{%d,}))' % (k,num_minimum_copies))
 
     # Is this a run where we want to check the reason why certain STRs were not
     # found? Read the file to save the STRs I am to look out for.
