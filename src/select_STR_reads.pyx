@@ -53,61 +53,75 @@ def IsHomopolymer(motif):
         return True
     return False
 
-#def MatchPattersAndReportBest(string, patterns, remove_homopolymers,
-#                              flanking_distance, debug_flag):
-#    """Find and return the best motif:copies in this string.
-#
-#    In cases where the STR could be from 2mer and 4mer for example, I will always
-#    report the 2mer. This is expected behavior as per Logan.
-#    """
-#    matches = []
-#    for pattern in patterns:
-#        for match in re.finditer(pattern, string, flags = re.IGNORECASE):
-#            STR = match.group(1)
-#            motif = match.group(2)
-#            copies = len(STR)/len(motif)
-#            start = match.start()
-#            end = match.end()
-#
-#            # Special case: motif's with Ns are not desirable. Lets throw
-#            # those away
-#            if motif.find("N") != -1: 
-#                if debug_flag: print >> stderr, "N in motif."
-#                continue
-#
-#            # Throw away matches that do not satisfy the flank requr.
-#            if start < flanking_distance: 
-#                if debug_flag: print >> stderr, "Insufficient 5' flank."
-#                continue
-#            if (len(string) - end) < flanking_distance: 
-#                if debug_flag: print >> stderr, "Insufficient 3' flank."
-#                continue
-#                
-#            # ignore homopolymer runs if that is requested by the user
-#            if remove_homopolymers == True and IsHomopolymer(motif):
-#                continue
-#
-#            # This match could be interesting. Lets save it.
-#            matches.append((len(STR), copies, STR, motif, start, end))
-#
-#    if len(matches) == 0: return None
-#
-#    # Sort so that the longest stretch of STR's is the first match. If 
-#    # two matches are equal in length, then I want the one with more
-#    # number of copies to be the first match. The second member of the
-#    # stored set assures of that.
-#    matches.sort(reverse = True)
-#    match = matches[0]
-#
-#    return match
+def AltMatchPattersAndReportBest(string, patterns, remove_homopolymers,
+                                 flanking_distance, debug_flag):
+    """Find and return the best motif:copies in this string using the alt algo.
 
-def MatchPattersAndReportBest(string, patterns, remove_homopolymers,
-                              flanking_distance, debug_flag):
+    In cases where the STR could be from 2mer and 4mer for example, I will always
+    report the 2mer. This is expected behavior as per Logan.
+    """
+    matches = []
+    for pattern in patterns:
+        for match in re.finditer(pattern, string, flags = re.IGNORECASE):
+            STR = match.group(1)
+            motif = match.group(2)
+            copies = len(STR)/len(motif)
+            start = match.start()
+            end = match.end()
+
+            # Special case: motif's with Ns are not desirable. Lets throw
+            # those away
+            if motif.find("N") != -1: 
+                if debug_flag: print >> stderr, "N in motif."
+                continue
+
+            # Throw away matches that do not satisfy the flank requr.
+            if start < flanking_distance: 
+                if debug_flag: print >> stderr, "Insufficient 5' flank."
+                continue
+            if (len(string) - end) < flanking_distance: 
+                if debug_flag: print >> stderr, "Insufficient 3' flank."
+                continue
+                
+            # ignore homopolymer runs if that is requested by the user
+            if remove_homopolymers == True and IsHomopolymer(motif):
+                continue
+
+            # This match could be interesting. Lets save it.
+            matches.append((len(STR), copies, STR, motif, start, end))
+
+    if len(matches) == 0: return None
+
+    # Sort so that the longest stretch of STR's is the first match. If 
+    # two matches are equal in length, then I want the one with more
+    # number of copies to be the first match. The second member of the
+    # stored set assures of that.
+    matches.sort(reverse = True)
+    match = matches[0]
+
+    return match
+
+def MatchPatternsAndReportBest(string, patterns, remove_homopolymers,
+                               flanking_distance, debug_flag, altalgo):
     """Find and return the best motif:copies in this string.
 
     In cases where the STR could be from 2mer and 4mer for example, I will always
     report the 2mer. This is expected behavior as per Logan.
     """
+    
+    # The alternate algorithm passes the longest STR that passes the user
+    # thresholds. This particular implementation finds the longest STR and then
+    # applies the user thresholds on that STR to see if this read should be
+    # output. The alternate algorithm can output a larger fraction of sequences,
+    # but extra downstream processing is needed to select the STRs that should
+    # be used for probe design. The extra-processing is required since there is
+    # a chance that multiple contigs will be generated from around the same
+    # genomic locus if we use the alternate algorithm. This currently done by
+    # scripts from Logan and are not part of STRBait. 
+    if altalgo:
+        return AltMatchPatternsAndReportBest(string, patterns, 
+                           remove_homopolymers, flanking_distance, debug_flag)
+    
     matches = []
     for pattern in patterns:
         for match in re.finditer(pattern, string, flags = re.IGNORECASE):
@@ -151,31 +165,6 @@ def MatchPattersAndReportBest(string, patterns, remove_homopolymers,
         return None
 
     return match
-
-    #eligible_match = None
-    #
-    #for match in matches:
-    #    motif = match[3]
-    #    start = match[4]
-    #    end   = match[5]
-    #    # Throw away matches that do not satisfy the flank requr.
-    #    if start < flanking_distance: 
-    #        if debug_flag: print >> stderr, "Insufficient 5' flank.: %s" % start
-    #        continue
-    #    if (len(string) - end) < flanking_distance: 
-    #        if debug_flag: 
-    #            print >> stderr, "Insufficient 3' flank.: %s" % (len(string)-end)
-    #        continue
-    #                
-    #    # ignore homopolymer runs if that is requested by the user
-    #    if remove_homopolymers == True and IsHomopolymer(motif):
-    #        continue
-
-    #    eligible_match = match
-    #    break
-
-    #return eligible_match
-
 
 def PrintSequence(s, match, rc_match, illumina_quals):
     """Print this fastq sequence with some additional information about the STR.
@@ -302,7 +291,7 @@ def PrintPerformanceLog(to_check):
    
 def select_str_reads(filenames, num_minimum_copies, flanking_distance,
          illumina_quals, check_strs, only_k_mers, remove_homopolymers,
-         debug_flag):
+         debug_flag, altalgo):
     """Find the reads that harbor STR and satisfy certain conditions.
     """
     # STRs are short sequences of DNA, normally of length 2-6 base pairs, that 
@@ -327,17 +316,18 @@ def select_str_reads(filenames, num_minimum_copies, flanking_distance,
                 print >> stderr, "%s" % s.name
 
             # Does this sequence have a short tandem repeat in it?
-            match = MatchPattersAndReportBest(s.seq, 
-                    patterns, remove_homopolymers, flanking_distance, debug_flag)
+            match = MatchPatternsAndReportBest(s.seq, 
+                    patterns, remove_homopolymers, flanking_distance,
+                    debug_flag, altalgo)
             if match == None:
                 if debug_flag: print >> stderr, "0 valid matches."
                 continue
             if debug_flag: print >> stderr, "Found %s:%d." % (motif,copies)  
 
             # What about the matches when the read is reverse complemented?
-            rc_match = MatchPattersAndReportBest(ReverseComplement(s.seq),
+            rc_match = MatchPatternsAndReportBest(ReverseComplement(s.seq),
                        patterns, remove_homopolymers, flanking_distance, 
-                       debug_flag)
+                       debug_flag, altalgo)
             if rc_match == None:
                 if debug_flag: print >> stderr, "0 valid matches."
                 continue

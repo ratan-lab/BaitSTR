@@ -25,6 +25,7 @@ large: install
 .PHONY: clean archive
 
 clean:
+	cd sparsehash && $(MAKE) clean
 	-rm *.o
 	-rm -rf *.dSYM
 	-rm *.pyc
@@ -47,6 +48,7 @@ install: fastq.pyx \
     	 fastq_seq.h fastq_seq.c \
 		 sparse_hash.h \
 		 extend_STR_reads.c	
+	cd sparsehash && ./configure && $(MAKE)
 	python setup.py build_ext --inplace
 	rm -rf build
 	$(CC)  $(CFLAGS) -c utilities.c
@@ -58,6 +60,7 @@ install: fastq.pyx \
 	$(CC)  $(CFLAGS) -c fastq_seq.c
 	$(CC1) $(CPFLAGS)  \
 		-o extend_STR_reads \
+		-Isparsehash/src \
         utilities.o sllist.o clparsing.o kmer.o murmur_hash.o bloom_filter.o \
 	    fastq_seq.o \
 		extend_STR_reads.c -lz -lm
