@@ -53,8 +53,8 @@ def IsHomopolymer(motif):
         return True
     return False
 
-def AltMatchPattersAndReportBest(string, patterns, remove_homopolymers,
-                                 flanking_distance, debug_flag):
+def AltMatchPatternsAndReportBest(string, patterns, remove_homopolymers,
+                                  flanking_distance, debug_flag):
     """Find and return the best motif:copies in this string using the alt algo.
 
     In cases where the STR could be from 2mer and 4mer for example, I will always
@@ -67,7 +67,7 @@ def AltMatchPattersAndReportBest(string, patterns, remove_homopolymers,
             motif = match.group(2)
             copies = len(STR)/len(motif)
             start = match.start()
-            end = match.end()
+            end = start + len(STR)
 
             # Special case: motif's with Ns are not desirable. Lets throw
             # those away
