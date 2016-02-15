@@ -2,6 +2,8 @@ from sys import argv, stderr, stdin, exit, stdout
 from getopt import getopt, GetoptError
 from itertools import izip_longest
 from string import maketrans
+from multiprocessing import Pool
+from functools import partial
 
 import re
 
@@ -289,9 +291,36 @@ def PrintPerformanceLog(to_check):
             print >> stderr, "Found %d reads supporting %s:%d:%s:%s" % \
                 (md.found, motif, copies, md.lflank, md.rflank)
    
+def ProcessSequence(patterns, remove_homopolymers, flanking_distance, debug_flag, altalgo, to_check, check_strs, illumina_quals, r):
+    s = r.fastqsequence
+    if debug_flag:
+        print >> stderr, "-"*79
+        print >> stderr, "%s" % s.name
+
+    # Does this sequence have a short tandem repeat in it?
+    match = MatchPatternsAndReportBest(s.seq, 
+            patterns, remove_homopolymers, flanking_distance,
+            debug_flag, altalgo)
+    if match == None:
+        if debug_flag: print >> stderr, "0 valid matches."
+        return None
+
+    # What about the matches when the read is reverse complemented?
+    rc_match = MatchPatternsAndReportBest(ReverseComplement(s.seq),
+               patterns, remove_homopolymers, flanking_distance, 
+               debug_flag, altalgo)
+    if rc_match == None:
+        if debug_flag: print >> stderr, "0 valid matches."
+        return None
+
+    # Lets register the fact that we found this STR associated read.
+    if check_strs: RegisterSTR(s.seq, match, rc_match, to_check)
+
+    return (s, match, rc_match)
+
 def select_str_reads(filenames, num_minimum_copies, flanking_distance,
          illumina_quals, check_strs, only_k_mers, remove_homopolymers,
-         debug_flag, altalgo):
+         debug_flag, altalgo, num_processes):
     """Find the reads that harbor STR and satisfy certain conditions.
     """
     # STRs are short sequences of DNA, normally of length 2-6 base pairs, that 
@@ -305,44 +334,18 @@ def select_str_reads(filenames, num_minimum_copies, flanking_distance,
     # Is this a run where we want to check the reason why certain STRs were not
     # found? Read the file to save the STRs I am to look out for.
     to_check = ReadSTRList(check_strs)
+    
+    pool = Pool(num_processes)
+    func = partial(ProcessSequence, patterns, remove_homopolymers, flanking_distance, debug_flag, altalgo, to_check, check_strs, illumina_quals)
 
     for filename in filenames:
         records = fastq(filename)
-
-        for r in records:
-            s = r.fastqsequence
-            if debug_flag: 
-                print >> stderr, "-"*79
-                print >> stderr, "%s" % s.name
-
-            # Does this sequence have a short tandem repeat in it?
-            match = MatchPatternsAndReportBest(s.seq, 
-                    patterns, remove_homopolymers, flanking_distance,
-                    debug_flag, altalgo)
-            if match == None:
-                if debug_flag: print >> stderr, "0 valid matches."
-                continue
-            if debug_flag: print >> stderr, "Found %s:%d." % (motif,copies)  
-
-            # What about the matches when the read is reverse complemented?
-            rc_match = MatchPatternsAndReportBest(ReverseComplement(s.seq),
-                       patterns, remove_homopolymers, flanking_distance, 
-                       debug_flag, altalgo)
-            if rc_match == None:
-                if debug_flag: print >> stderr, "0 valid matches."
-                continue
-
-            # Lets register the fact that we found this STR associated read.
-            if check_strs: RegisterSTR(s.seq, match, rc_match, to_check)
-
-            # Print the read details along with the motif, position of the STR
-            PrintSequence(s, match, rc_match, illumina_quals)
-
+        for x in pool.imap_unordered(func, records):
+            if x != None:
+                # Print read details along with the motif, position of the STR
+                PrintSequence(x[0],x[1],x[2],illumina_quals)
         records.close()
         print >> stderr, "Done processing %s" % filename
                     
     if check_strs:
         PrintPerformanceLog(to_check)
-
-
-
