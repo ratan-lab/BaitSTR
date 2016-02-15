@@ -65,7 +65,7 @@ debug_flag = False
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt(argv[1:], "hdn:f:ic:v23456rxp:",["help", "debug", "numcopies=", "flanks=", "illumina", "check=", "version", "2mer", "3mer", "4mer", "5mer", "6mer", "removehm", "altalgo", "numprocesses="])
+        opts, args = getopt(argv[1:], "hdn:f:ic:v23456rxp:s:",["help", "debug", "numcopies=", "flanks=", "illumina", "check=", "version", "2mer", "3mer", "4mer", "5mer", "6mer", "removehm", "altalgo", "numprocesses=", "chunksize="])
     except GetoptError, err:
         print str(err)
         print >> stderr, __doc__
@@ -81,6 +81,7 @@ if __name__ == "__main__":
     debug_flag = False
     altalgo = False
     num_processes = 2
+    chunksize = 100000
 
     for o, a in opts:
         if o in ("-h", "--help"):
@@ -108,6 +109,8 @@ if __name__ == "__main__":
             altalgo = True
         elif o in ("-p", "--numprocesses"):
             num_processes = int(a)
+        elif o in ("-s", "--chunksize"):
+            chunksize = int(a)
         else:
             assert False, "unhandled option"
 
@@ -127,4 +130,5 @@ if __name__ == "__main__":
         only_k_mer = [2,3,4,5,6]
     select_str_reads(args, num_minimum_copies, flanking_distance, 
                      illumina_quals, check_strs, only_k_mer,
-                     remove_homopolymers, debug_flag, altalgo, num_processes)
+                     remove_homopolymers, debug_flag, altalgo, num_processes,
+                     chunksize)

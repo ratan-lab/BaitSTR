@@ -291,8 +291,8 @@ def PrintPerformanceLog(to_check):
             print >> stderr, "Found %d reads supporting %s:%d:%s:%s" % \
                 (md.found, motif, copies, md.lflank, md.rflank)
    
-def ProcessSequence(patterns, remove_homopolymers, flanking_distance, debug_flag, altalgo, to_check, check_strs, illumina_quals, r):
-    s = r.fastqsequence
+def ProcessSequence(patterns, remove_homopolymers, flanking_distance, debug_flag, altalgo, to_check, check_strs, illumina_quals, s):
+    if s == None: return None
     if debug_flag:
         print >> stderr, "-"*79
         print >> stderr, "%s" % s.name
@@ -318,9 +318,27 @@ def ProcessSequence(patterns, remove_homopolymers, flanking_distance, debug_flag
 
     return (s, match, rc_match)
 
+def Chunker(records, chunksize):
+    numread = 0
+    chunk = []
+
+    for r in records:
+        s = r.fastqsequence
+        chunk.append(fastqsequence(s.name, s.seq, s.qual))
+        numread += 1
+        if numread == chunksize:
+            yield chunk
+            numread = 0
+            chunk = []   
+
+    if len(chunk) > 0:
+        yield chunk
+        
+    raise StopIteration
+
 def select_str_reads(filenames, num_minimum_copies, flanking_distance,
          illumina_quals, check_strs, only_k_mers, remove_homopolymers,
-         debug_flag, altalgo, num_processes):
+         debug_flag, altalgo, num_processes, chunksize):
     """Find the reads that harbor STR and satisfy certain conditions.
     """
     # STRs are short sequences of DNA, normally of length 2-6 base pairs, that 
@@ -340,10 +358,14 @@ def select_str_reads(filenames, num_minimum_copies, flanking_distance,
 
     for filename in filenames:
         records = fastq(filename)
-        for x in pool.imap_unordered(func, records):
-            if x != None:
-                # Print read details along with the motif, position of the STR
-                PrintSequence(x[0],x[1],x[2],illumina_quals)
+
+        for chunk in Chunker(records, chunksize):
+            result = pool.map(func, chunk)
+            for x in result:
+                # Print details along with the motif, position of the STR
+                if x != None:
+                    PrintSequence(x[0],x[1],x[2],illumina_quals)
+
         records.close()
         print >> stderr, "Done processing %s" % filename
                     
