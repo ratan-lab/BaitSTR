@@ -7,7 +7,7 @@ STRBait is a collection of three programs to automate the discovery of exact sho
 STRBait should work on any standard 64 bit Linux environment with 
 
 - GCC
-- Python version >= 2.6
+- Python version >= 2.7
 - Google Sparsehash (http://code.google.com/p/sparsehash)
 - zlib (http://zlib.net)
 - Cython
