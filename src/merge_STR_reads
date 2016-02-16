@@ -43,7 +43,7 @@ pid_threshold = 90
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt(argv[1:], "hdvx:y:p",["help", "debug", "version", "min_threshold=", "max_threshold=", "profile"])
+        opts, args = getopt(argv[1:], "hdvx:y:p:s:",["help", "debug", "version", "min_threshold=", "max_threshold=", "numprocesses=", "chunksize="])
     except GetoptError, err:
         print str(err)
         print >> stderr, __doc__
@@ -52,7 +52,8 @@ if __name__ == "__main__":
     min_threshold = 2
     max_threshold = 10000
     print_version = False
-    profile_run = False
+    num_processes = 2
+    chunk_size = 100000
 
     for o, a in opts:
         if o in ("-h", "--help"):
@@ -66,8 +67,10 @@ if __name__ == "__main__":
             max_threshold = int(a)
         elif o in ("-v", "--version"):
             print_version = True
-        elif o in ("-p", "--profile"):
-            profile_run = True
+        elif o in ("-p", "--numprocesses"):
+            num_processes = int(a)
+        elif o in ("-s", "--chunksize"):
+            chunk_size = int(a)
         else:
             assert False, "unhandled option"
 
@@ -82,8 +85,5 @@ if __name__ == "__main__":
         print >> stderr, __doc__
         exit(3)
 
-    if profile_run:
-        run("main(int(args[0]), args[1], min_threshold, max_threshold)", sort = 'tottime')
-    else:
-        merge_str_reads(int(args[0]), args[1], min_threshold, max_threshold, 
-                        pid_threshold, debug_flag)
+    merge_str_reads(int(args[0]), args[1], min_threshold, max_threshold, 
+                        pid_threshold, debug_flag, num_processes, chunk_size)

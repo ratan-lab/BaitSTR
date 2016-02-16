@@ -2,6 +2,8 @@ from sys import argv, stderr, stdin, exit, stdout
 from getopt import getopt, GetoptError
 from profile import run
 from time import time
+from multiprocessing import Pool, Manager
+from functools import partial
 
 from fastq import *
 
@@ -246,93 +248,118 @@ def AlignFlanks(block, s, motif, copies, zstart, end, max_threshold,
             lqual + mqual + rqual,
             nc)
 
-def merge_str_reads(int klength, char* filename, int min_threshold, 
-                    int max_threshold,
-                    float pid_threshold, int debug_flag):
-    records = fastq(filename)
+def ProcessSequence(debug_flag, blocks, klength, max_threshold,pid_threshold, s):
+    if s == None: return
+    if debug_flag:
+        print >> stderr, "-"*79
+        print >> stderr, s.name
+        print >> stderr, s.seq
+        print >> stderr, ""
 
-    # Store all the merged reads here. 
-    blocks = {}
-    start_time = time()
+    name,m1,c1,s1,e1,m2,c2,s2,e2 = s.name.strip().split("\t")
+    c1 = int(c1)
+    s1 = int(s1)
+    e1 = int(e1)
+    c2 = int(c2)
+    s2 = int(s2)
+    e2 = int(e2)
 
-    cdef int indx = 0
-    for r in records:
-        s = r.fastqsequence
-        indx += 1
-        if indx % 1000000 == 0:
-            print >> stderr, "Processing read %d [%d sec. elapsed]" \
-                   % (indx, time() - start_time)        
+    # Check if the sequence aligns to some reads that we have already
+    # processed.
+    does_align = False
+    aligned_block = None
 
-        if debug_flag:
-            print >> stderr, "-"*79
-            print >> stderr, s.name
-            print >> stderr, s.seq
-            print >> stderr, ""
+    # We will keep only one of the two motifs (the motif on the forward
+    # strand or the motif on the reverse strand)
+    motif  = m1
+    copies = c1
+    zstart = s1
+    end    = e1
 
-        name,m1,c1,s1,e1,m2,c2,s2,e2 = s.name.strip().split("\t")
-        c1 = int(c1)
-        s1 = int(s1)
-        e1 = int(e1)
-        c2 = int(c2)
-        s2 = int(s2)
-        e2 = int(e2)
+    lflank = s.seq[zstart - klength : zstart]
+    rflank = s.seq[end : end + klength]
 
-        # Check if the sequence aligns to some reads that we have already
-        # processed.
-        does_align = False
-        aligned_block = None
+    if (motif,lflank,rflank) in blocks:
+        block = blocks[(motif,lflank,rflank)]
+        merged_block = AlignFlanks(block,s,motif,copies,zstart,end,
+                                   max_threshold,pid_threshold,debug_flag)
+        if debug_flag: print >> stderr, ""
+        if merged_block != None:
+            aligned_block = block
+            does_align = True
 
-        # We will keep only one of the two motifs (the motif on the forward
-        # strand or the motif on the reverse strand)
-        motif  = m1
-        copies = c1
-        zstart = s1
-        end    = e1
-
+    if does_align == False:
+        motif  = m2
+        copies = c2
+        zstart = s2
+        end    = e2
+        s.reverse_complement()
+    
         lflank = s.seq[zstart - klength : zstart]
         rflank = s.seq[end : end + klength]
 
         if (motif,lflank,rflank) in blocks:
             block = blocks[(motif,lflank,rflank)]
-            merged_block = AlignFlanks(block,s,motif,copies,zstart,end,
-                                       max_threshold,pid_threshold,debug_flag)
+            merged_block=AlignFlanks(block,s,motif,copies,zstart,end,
+                                     max_threshold,pid_threshold,debug_flag)
             if debug_flag: print >> stderr, ""
             if merged_block != None:
                 aligned_block = block
                 does_align = True
 
-        if does_align == False:
-            motif  = m2
-            copies = c2
-            zstart = s2
-            end    = e2
-            s.reverse_complement()
+    if does_align == True:
+        blocks[(motif,lflank,rflank)] = merged_block
+        return
+
+    if (motif,lflank,rflank) not in blocks: 
+        blocks[(motif,lflank,rflank)] = (zstart,end,1,s.seq,s.qual,set(s.name.split()[2]))
+
+def Chunker(records, chunksize):
+    numread = 0
+    chunk = []
+
+    for r in records:
+        s = r.fastqsequence
+        chunk.append(fastqsequence(s.name, s.seq, s.qual))
+        numread += 1
+        if numread == chunksize:
+            yield chunk
+            numread = 0
+            chunk = []   
+
+    if len(chunk) > 0:
+        yield chunk
         
-            lflank = s.seq[zstart - klength : zstart]
-            rflank = s.seq[end : end + klength]
+    raise StopIteration
 
-            if (motif,lflank,rflank) in blocks:
-                block = blocks[(motif,lflank,rflank)]
-                merged_block=AlignFlanks(block,s,motif,copies,zstart,end,
-                                         max_threshold,pid_threshold,debug_flag)
-                if debug_flag: print >> stderr, ""
-                if merged_block != None:
-                    aligned_block = block
-                    does_align = True
+def merge_str_reads(int klength, char* filename, int min_threshold, 
+                    int max_threshold,
+                    float pid_threshold, int debug_flag, int num_processes,
+                    int chunksize):
+    records = fastq(filename)
 
-        if does_align == True:
-            blocks[(motif,lflank,rflank)] = merged_block
-            continue
+    # Store all the merged reads here.
+    mgr = Manager() 
+    blocks = mgr.dict()
+    pool = Pool(num_processes)
+    func = partial(ProcessSequence, debug_flag, blocks, klength, max_threshold,pid_threshold)
 
-        if (motif,lflank,rflank) not in blocks: 
-            blocks[(motif,lflank,rflank)] = (zstart,end,1,s.seq,s.qual,set(s.name.split()[2]))
+    start_time = time()
+    cdef int indx = 0
 
+    for chunk in Chunker(records, chunksize):
+        indx += len(chunk)
+        pool.map(func, chunk)
+
+    pool.close()
+    pool.join()
     records.close()
     print >> stderr, "Processed %d reads [%d sec. elapsed]" % (indx, time() - start_time)        
 
     # Lets print out the merged reads
     indx = 1
-    for (motif,lflank,rflank),reads in blocks.items():
+    for (motif,lflank,rflank) in blocks.keys():
+        reads = blocks[(motif,lflank,rflank)]
         zstart,end,num_members,sequence,qual,nc  = reads
         copies = list(nc)
 
