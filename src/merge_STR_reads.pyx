@@ -248,7 +248,7 @@ def AlignFlanks(block, s, motif, copies, zstart, end, max_threshold,
             lqual + mqual + rqual,
             nc)
 
-def ProcessSequence(debug_flag, blocks, klength, max_threshold,pid_threshold, s):
+def ProcessSequence(debug_flag, blocks, klength, max_threshold,pid_threshold, lock, s):
     if s == None: return
     if debug_flag:
         print >> stderr, "-"*79
@@ -279,6 +279,7 @@ def ProcessSequence(debug_flag, blocks, klength, max_threshold,pid_threshold, s)
     lflank = s.seq[zstart - klength : zstart]
     rflank = s.seq[end : end + klength]
 
+    lock.acquire()
     if (motif,lflank,rflank) in blocks:
         block = blocks[(motif,lflank,rflank)]
         merged_block = AlignFlanks(block,s,motif,copies,zstart,end,
@@ -309,10 +310,12 @@ def ProcessSequence(debug_flag, blocks, klength, max_threshold,pid_threshold, s)
 
     if does_align == True:
         blocks[(motif,lflank,rflank)] = merged_block
+        lock.release()
         return
 
     if (motif,lflank,rflank) not in blocks: 
         blocks[(motif,lflank,rflank)] = (zstart,end,1,s.seq,s.qual,set(s.name.split()[2]))
+    lock.release()
 
 def Chunker(records, chunksize):
     numread = 0
@@ -341,8 +344,9 @@ def merge_str_reads(int klength, char* filename, int min_threshold,
     # Store all the merged reads here.
     mgr = Manager() 
     blocks = mgr.dict()
+    lock = mgr.Lock()
     pool = Pool(num_processes)
-    func = partial(ProcessSequence, debug_flag, blocks, klength, max_threshold,pid_threshold)
+    func = partial(ProcessSequence, debug_flag, blocks, klength, max_threshold,pid_threshold, lock)
 
     start_time = time()
     cdef int indx = 0
@@ -351,8 +355,6 @@ def merge_str_reads(int klength, char* filename, int min_threshold,
         indx += len(chunk)
         pool.map(func, chunk)
 
-    pool.close()
-    pool.join()
     records.close()
     print >> stderr, "Processed %d reads [%d sec. elapsed]" % (indx, time() - start_time)        
 
@@ -380,3 +382,6 @@ def merge_str_reads(int klength, char* filename, int min_threshold,
                     print >> stderr, "\t%s" % name
 
             indx += 1  
+
+    pool.close()
+    pool.join()
