@@ -119,7 +119,7 @@ if __name__ == "__main__":
     # Do we want to print the version and quit?
     if print_version == True:
         print >> stderr, "Program: select_STR_reads"
-        print >> stderr, "Version: 0.2 released 20140707"
+        print >> stderr, "Version: 0.3 released 20160217"
         print >> stderr, "Contact: Aakrosh Ratan (ratan@bx.psu.edu)"
         exit(0)
 
