@@ -11,6 +11,8 @@
         -v,--version: print version and quit
         -x,--min_threshold: discard blocks with < min_threshold reads [3]
         -y,--max_threshold: discard blocks with > max_threshold reads.[10000]
+        -p,--numprocesses: use these number of processes. [2]
+        -s,--chunksize: each process should be assigned chunk of reads. [100000]
 
     klength refers to the kmer length to be used.
     reads.str.fq refers to the fastq file with reads that have STR's (in most

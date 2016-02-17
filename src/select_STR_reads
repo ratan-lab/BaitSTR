@@ -16,6 +16,8 @@
         -5,--5mer : print reads that harbor only 5mers.
         -6,--6mer : print reads that harbor only 6mers.
         -r,--removehm: ignore STR that harbor homopolymer runs.
+        -p,--numprocesses: use these number of processes. [2]
+        -s,--chunksize: each process should be assigned chunk of reads. [100000]
 
     This script uses the "re" module in python to find all STR's of length 2-6.
 
@@ -79,7 +81,7 @@ if __name__ == "__main__":
     only_k_mer = []
     remove_homopolymers = False
     debug_flag = False
-    altalgo = False
+    altalgo = True
     num_processes = 2
     chunksize = 100000
 
@@ -106,7 +108,7 @@ if __name__ == "__main__":
         elif o in ("-r", "--removehm"):
             remove_homopolymers = True
         elif o in ("-x", "--altalgo"):
-            altalgo = True
+            altalgo = False
         elif o in ("-p", "--numprocesses"):
             num_processes = int(a)
         elif o in ("-s", "--chunksize"):
