@@ -143,6 +143,38 @@ void PrintFastqSequence(const FastqSequence* const sp) {
     printf("%s\n", sp->quals);
 }
 
+static const unsigned char dna_complement[] =
+  "                                                                "
+  " TVGH  CD  M KN   YSA BWXR       tvgh  cd  m kn   ysa bwxr      "
+  "                                                                "
+  "                                                                ";
+
+// reverse complement the sequence in place
+void ReverseComplementSequence(FastqSequence* const sp)
+{
+    char* s = sp->bases;
+    char* p = s + sp->slen - 1;
+
+    while (s <= p) {
+ 		char c;
+
+		c = dna_complement[(int)*s];
+		*s = dna_complement[(int)*p];
+		*p = c;
+		++s; --p;
+	}  
+
+    s = sp->quals;
+    p = s + sp->slen - 1;
+    while (s <= p) {
+        char c;
+        c = *p;
+        *p = *s;
+        *s = c;
+        ++s; --p;
+    }
+}
+
 // free all the resources used by this fastq FastqSequence
 void CloseFastqSequence(FastqSequence* sp) {
     FreeSequence(&sp);  

@@ -11,7 +11,7 @@ extern "C" {
 #include "bloom_filter.h"
 }
 
-#include "sparse_hash.h"
+#include "sparse_kmer_hash.h"
 
 char* program_version_major = "0";
 char* program_version_minor = "30";

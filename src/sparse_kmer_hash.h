@@ -1,5 +1,5 @@
-#ifndef SPARSE_HASH_MAP_H_
-#define SPARSE_HASH_MAP_H_
+#ifndef SPARSE_KMER_HASH_H_
+#define SPARSE_KMER_HASH_H_
 
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
@@ -90,4 +90,4 @@ Bool CheckKmerInSparseHashMap(SparseHashMap& kmers,
     return TRUE;
 }
 
-#endif  // SPARSE_HASH_MAP_H_
+#endif  // SPARSE_KMER_HASH_H_

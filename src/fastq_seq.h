@@ -35,6 +35,9 @@ void PrintFastqSequence(const FastqSequence* const sp);
 // get the next fastq FastqSequence to the FastqSequence sp
 FastqSequence* GetNextSequence(FastqSequence* const sp);
 
+// reverse complement the sequence in place
+void ReverseComplementSequence(FastqSequence* const sp);
+
 // free all the resources used by this fastq FastqSequence
 void CloseFastqSequence(FastqSequence* sp);
 

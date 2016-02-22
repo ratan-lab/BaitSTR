@@ -8,16 +8,17 @@ STRBait should work on any standard 64 bit Linux environment with
 
 - GCC
 - Python version >= 2.7
-- Google Sparsehash (http://code.google.com/p/sparsehash)
 - zlib (http://zlib.net)
 - Cython
 
 ## ACKNOWLEDGEMENTS
-STRBait uses 128 bit version of MurmurHash as the hash function. MurmurHash
+- STRBait uses 128 bit version of MurmurHash as the hash function. MurmurHash
 was created by Austin Appleby in 2008. Seungyoung Kim has ported it's cannonical
 implementation to C language in 2012 and published it as a part of qLibc
 component (dedicated to the public domain by the authors). The version used in 
-STRBait is heavily borrowed from that.
+STRBait is heavily borrowed from that. 
+- STRBait uses Google Sparsehash (http://code.google.com/p/sparsehash) as a 
+submodule.
 
 ## INSTALLATION
 Make sure you have installed Google Sparsehash before moving to the next step.
@@ -36,7 +37,6 @@ Please make sure that following files are in the `bin` folder:
 extend_STR_reads
 fastq.so
 merge_STR_reads
-merge_STR_reads.so
 select_STR_reads
 select_STR_reads.so
 ```
@@ -62,12 +62,14 @@ Select and annotate reads that harbor a short tandem repeat.
         -5,--5mer : print reads that harbor only 5mers.
         -6,--6mer : print reads that harbor only 6mers.
         -r,--removehm: ignore STR that harbor homopolymer runs.
+        -p,--numprocesses: use these number of processes. [2]
+        -s,--chunksize: each process should be assigned chunk of reads. [100000]
 ```
 
-This script uses the `re` module in python to find all STR's of length 2-6.
+This script uses the `re` module in python to find all STR's of length 2-6. It
+uses the `multiprocessing` module to run this script in parallel.
     
 #### Notes:
-- We throw away the read if that longest motif has an `N` in it.
 - We print the motif, number of copies of the motif, 0 based start position
   of the motif, and end position of the motif in the name of the
   read. We also print the information about the motif if the read was 
@@ -94,15 +96,17 @@ This script uses the `re` module in python to find all STR's of length 2-6.
 Merge reads that support the same STR.
 
 ```
-    usage:
-        merge_STR_reads [options] klength reads.str.fq
+usage:
+    merge_STR_reads [options] klength reads.str.fq
 
-    where the options are:
-        -h,--help : print usage and quit
-        -d,--debug: print debug information
-        -v,--version: print version and quit
-        -x,--min_threshold: discard blocks with < min_threshold reads [3]
-        -y,--max_threshold: discard blocks with > max_threshold reads.[10000]
+options:
+    help           Print this string and quit.[--nohelp]
+    debug          Print extra debug information in this run.[--nodebug]
+    min_threshold  Discard blocks that include < min_threshold reads
+                   [--min_threshold=3]
+    max_threshold  Discard blocks that include > max_threshold reads
+                   [--max_threshold=10000]
+    progress       print progress every so many sequences[--progress=1000000]
 ```
 
 - klength refers to the kmer length to be used.

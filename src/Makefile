@@ -6,7 +6,7 @@ CFLAGS  = -W -Wformat -Wimplicit -Wreturn-type -Wall -Werror \
           -Wcast-align -Winline -Wextra 
 CPFLAGS = -W -Wformat -Wreturn-type -Wall -w \
           -Wunused-variable -Wunused-parameter -Wreturn-type -Wswitch \
-          -Wcast-align -Winline -Wextra 
+          -Wcast-align -Winline -Wextra
 
 CFLAGS += -g -ggdb
 CFLAGS += -O3
@@ -32,13 +32,12 @@ clean:
 	-rm -rf ../bin
 	-rm *.so
 	-rm select_STR_reads.c
-	-rm merge_STR_reads.c
 	-rm fastq.c
+	-rm merge_STR_reads
 	-rm extend_STR_reads
 
 install: fastq.pyx \
 		 select_STR_reads select_STR_reads.pyx \
-		 merge_STR_reads merge_STR_reads.pyx \
 		 utilities.h utilities.c \
 		 sllist.h sllist.c \
 		 clparsing.h clparsing.c \
@@ -46,7 +45,9 @@ install: fastq.pyx \
     	 murmur_hash.h murmur_hash.c \
     	 bloom_filter.h bloom_filter.c \
     	 fastq_seq.h fastq_seq.c \
-		 sparse_hash.h \
+		 sparse_word_hash.h \
+		 sparse_kmer_hash.h \
+		 merge_STR_reads.c \
 		 extend_STR_reads.c	
 	cd sparsehash && ./configure && $(MAKE)
 	python setup.py build_ext --inplace
@@ -59,6 +60,12 @@ install: fastq.pyx \
 	$(CC)  $(CFLAGS) -c bloom_filter.c
 	$(CC)  $(CFLAGS) -c fastq_seq.c
 	$(CC1) $(CPFLAGS)  \
+		-o merge_STR_reads \
+		-Isparsehash/src \
+        utilities.o sllist.o clparsing.o kmer.o murmur_hash.o bloom_filter.o \
+	    fastq_seq.o \
+		merge_STR_reads.c -lz -lm
+	$(CC1) $(CPFLAGS)  \
 		-o extend_STR_reads \
 		-Isparsehash/src \
         utilities.o sllist.o clparsing.o kmer.o murmur_hash.o bloom_filter.o \
@@ -66,7 +73,6 @@ install: fastq.pyx \
 		extend_STR_reads.c -lz -lm
 	mkdir -p ../bin
 	-rm select_STR_reads.c
-	-rm merge_STR_reads.c
 	-rm fastq.c
 	-rm *.o
 	-rm -rf *.dSYM
