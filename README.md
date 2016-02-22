@@ -1,10 +1,10 @@
-# STRBait 
+# BaitSTR 
 
 ## SUMMARY
-STRBait is a collection of three programs to automate the discovery of exact short tandem repeats (and its flanking region) from Illumina fastq sequences. Not yet ready for public consumption.
+BaitSTR is a collection of three programs to automate the discovery of exact short tandem repeats (and its flanking region) from Illumina fastq sequences. Not yet ready for public consumption.
 
 ## REQUIREMENTS
-STRBait should work on any standard 64 bit Linux environment with 
+BaitSTR should work on any standard 64 bit Linux environment with 
 
 - GCC
 - Python version >= 2.7
@@ -12,12 +12,12 @@ STRBait should work on any standard 64 bit Linux environment with
 - Cython
 
 ## ACKNOWLEDGEMENTS
-- STRBait uses 128 bit version of MurmurHash as the hash function. MurmurHash
+- BaitSTR uses 128 bit version of MurmurHash as the hash function. MurmurHash
 was created by Austin Appleby in 2008. Seungyoung Kim has ported it's cannonical
 implementation to C language in 2012 and published it as a part of qLibc
 component (dedicated to the public domain by the authors). The version used in 
-STRBait is heavily borrowed from that. 
-- STRBait uses Google Sparsehash (http://code.google.com/p/sparsehash) as a 
+BaitSTR is heavily borrowed from that. 
+- BaitSTR uses Google Sparsehash (http://code.google.com/p/sparsehash) as a 
 submodule.
 
 ## INSTALLATION
@@ -41,7 +41,7 @@ select_STR_reads
 select_STR_reads.so
 ```
 ## DESCRIPTION
-STRBait consists of 3 modules that should be run sequentially to find exact STR's
+BaitSTR consists of 3 modules that should be run sequentially to find exact STR's
 along with their flanking bases. Here we describe the 3 modules and the general
 idea behind them.
 

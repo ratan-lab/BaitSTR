@@ -119,7 +119,7 @@ def MatchPatternsAndReportBest(string, patterns, remove_homopolymers,
     # be used for probe design. The extra-processing is required since there is
     # a chance that multiple contigs will be generated from around the same
     # genomic locus if we use the alternate algorithm. This currently done by
-    # scripts from Logan and are not part of STRBait. 
+    # scripts from Logan and are not part of BaitSTR. 
     if altalgo:
         return AltMatchPatternsAndReportBest(string, patterns, 
                            remove_homopolymers, flanking_distance, debug_flag)
