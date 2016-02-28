@@ -945,11 +945,15 @@ TRUE) < 95.00)) {
         }
     
         // Lets see if we can extend this reads towards the 3' end.
-        indx2 = FindFirstGoodKmer(kmers, 
+        if ((sequence->slen - end) < kmer_length) {
+            indx2 = 0;
+        } else {
+            indx2 = FindFirstGoodKmer(kmers, 
                                  sequence->bases + end, 
                                  sequence->slen - end - kmer_length + 1, 
                                  FALSE,
                                  kmer_length);
+        }
         indx2 += end;
         rflank = ExtendForward(kmers, sequence->bases, indx2, kmer_length);
         
