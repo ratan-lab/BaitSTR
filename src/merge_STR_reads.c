@@ -417,7 +417,8 @@ static void MergeShortTandemRepeatReads(const uint klength,
 
         if ((block->support >= min_threshold) && 
             (block->support <= max_threshold) && 
-            (block->copies[2] == 0)) {
+            (block->copies[2] == 0) && 
+            (block->copies[1] != 0)) {
             printf("@Block%d\t%s\t", bindex++, fmotif);
             for (int i = 0; i < 3; i++) {
                 if (block->copies[i] != 0) {
