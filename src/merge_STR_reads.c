@@ -290,7 +290,7 @@ static Bool AlignFlanks(Block* const block,
     Ckfree(block->seq);
     block->seq = (char*)CkalloczOrDie(block->slen+1);
     memcpy(block->seq, lseq, block->zstart);
-    for (int i = 0; i <= maxcopies; i++) {
+    for (int i = 0; i < maxcopies; i++) {
         sprintf(block->seq + block->zstart + (i * strlen(motif)), "%s", motif);
     }
     memcpy(block->seq + block->end, rseq, block->slen - block->end);
