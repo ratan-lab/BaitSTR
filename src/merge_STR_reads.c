@@ -285,6 +285,8 @@ static Bool AlignFlanks(Block* const block,
     if ((found == FALSE) && (j <= 2)) {
         block->copies[j] = copies;
     }
+    maxcopies = MAX(block->copies[0],block->copies[1]);
+
     block->end = block->zstart + strlen(motif) * maxcopies;
     block->slen = block->end + strlen(rseq);
     Ckfree(block->seq);
@@ -297,7 +299,7 @@ static Bool AlignFlanks(Block* const block,
     Ckfree(block->qual);
     block->qual = (char*)CkalloczOrDie(block->slen+1);
     memcpy(block->qual, lqual, block->zstart);
-    for (int i = 0; i <= (strlen(motif) * maxcopies); i++) {
+    for (int i = 0; i < (strlen(motif) * maxcopies); i++) {
         sprintf(block->qual + block->zstart + i, "!");
     }
     memcpy(block->qual + block->end, rqual, block->slen - block->end);
