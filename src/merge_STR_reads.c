@@ -361,15 +361,18 @@ static void MergeShortTandemRepeatReads(const uint klength,
         // Check if the sequence aligns to some reads that we have already
         // processed
         merged_block = FALSE;
+        int bsupport = 0;
           
         memcpy(lflank, sequence->bases + (fzstart - klength), klength);
         lflank[klength] = '\0';
         memcpy(rflank, sequence->bases + fend, klength);
         rflank[klength] = '\0';
         sprintf(buffer, "%s %s %s", fmotif, lflank, rflank);
+        if (debug_flag) fprintf(stderr, "%s\n", buffer);
 
         if (CheckInSparseWordHashMap(blocks, buffer) == TRUE) {
             block = blocks[buffer];
+            bsupport = block->support;
             merged_block = AlignFlanks(block, sequence, fmotif, fcopies, 
                                        fzstart, fend, max_threshold);
         }            
@@ -381,15 +384,19 @@ static void MergeShortTandemRepeatReads(const uint klength,
             memcpy(rflank, sequence->bases + rend, klength);
             rflank[klength] = '\0';
             sprintf(buffer, "%s %s %s", rmotif, lflank, rflank);
+            if (debug_flag) fprintf(stderr, "%s\n", buffer);
 
             if (CheckInSparseWordHashMap(blocks, buffer) == TRUE) {
                 block = blocks[buffer];
+                if (block->support > bsupport) {
+                    bsupport = block->support;
+                }
                 merged_block = AlignFlanks(block, sequence, rmotif, rcopies, 
                                            rzstart, rend, max_threshold);
             }
         }
 
-        if (merged_block == FALSE) {
+        if ((merged_block == FALSE) && (bsupport < min_threshold)) {
             block = (Block*)CkalloczOrDie(sizeof(Block));
             block->zstart = rzstart;
             block->end = rend;
