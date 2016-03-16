@@ -278,12 +278,14 @@ static Bool AlignFlanks(Block* const block,
             }
             j++;
             if (block->copies[i] == copies) {
+                block->nsupport[i] += 1;
                 found = TRUE;
             }
         }     
     }
     if ((found == FALSE) && (j <= 2)) {
         block->copies[j] = copies;
+        block->nsupport[j] += 1;
     }
     maxcopies = MAX(block->copies[0],block->copies[1]);
 
@@ -405,6 +407,7 @@ static void MergeShortTandemRepeatReads(const uint klength,
             block->seq = CopyString(sequence->bases);
             block->qual = CopyString(sequence->quals);
             block->copies[0] = rcopies;
+            block->nsupport[0] = 1;
             blocks[CopyString(buffer)] = block;
         }
 
@@ -424,10 +427,16 @@ static void MergeShortTandemRepeatReads(const uint klength,
         }
         Block* block = (*it).second;
 
+        //fprintf(stderr, "%d\t%d,%d,%d\t%d,%d,%d\n", 
+        //    block->support,
+        //    block->copies[0],block->copies[1],block->copies[2],
+        //    block->nsupport[0],block->nsupport[1],block->nsupport[2]);
         if ((block->support >= min_threshold) && 
             (block->support <= max_threshold) && 
             (block->copies[2] == 0) && 
-            (block->copies[1] != 0)) {
+            (block->copies[1] != 0) && 
+            (block->nsupport[0] >= 2) && 
+            (block->nsupport[1] >= 2)) {
             printf("@Block%d\t%s\t", bindex++, fmotif);
             for (int i = 0; i < 3; i++) {
                 if (block->copies[i] != 0) {
@@ -456,7 +465,7 @@ int main(int argc, char** argv) {
     CommandLineArguments* cl_options = NewCommandLineArguments();
 
     // these are the valid options for the various commands
-    AddOption(&cl_options, "min_threshold", "3", TRUE, TRUE, 
+    AddOption(&cl_options, "min_threshold", "4", TRUE, TRUE, 
     "Discard blocks that include < min_threshold reads", NULL);
     AddOption(&cl_options, "max_threshold", "10000", TRUE, TRUE,
     "Discard blocks that include > max_threshold reads", NULL);

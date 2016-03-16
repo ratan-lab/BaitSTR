@@ -27,6 +27,7 @@ typedef struct Block_st
     char* seq;
     char* qual;
     int copies[3];
+    int nsupport[3];
 } Block;
 
 struct eqstr
