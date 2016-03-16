@@ -18,16 +18,23 @@ using google::sparse_hash_map;      // namespace where class lives by default
 using std::cout;
 using std::endl;
 
+typedef struct Copies_st
+{
+    struct Copies_st* next;
+    uint16_t copies;
+    uint16_t nsupport;
+} Copies;
+
 typedef struct Block_st
 {
-    uint zstart;
-    uint end;
-    uint slen;
-    uint support;
+    struct Block_st* next;
+    uint16_t zstart;
+    uint16_t end;
+    uint16_t slen;
+    uint16_t support;
+    Copies* supports;
     char* seq;
     char* qual;
-    int copies[3];
-    int nsupport[3];
 } Block;
 
 struct eqstr

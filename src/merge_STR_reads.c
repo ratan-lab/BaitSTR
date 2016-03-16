@@ -270,38 +270,31 @@ static Bool AlignFlanks(Block* const block,
     block->zstart = strlen(lseq);
     block->support++;
     Bool found = FALSE;
-    uint maxcopies = 0, i = 0, j = 0;
-    for (i = 0, j = 0; i < 3; i++) {
-        if (block->copies[i] != 0) {
-            if (block->copies[i] > maxcopies) { 
-                maxcopies = block->copies[i];
-            }
-            j++;
-            if (block->copies[i] == copies) {
-                block->nsupport[i] += 1;
-                found = TRUE;
-            }
-        }     
+    for(Copies* iter = block->supports; iter; iter = iter->next) {
+        if (iter->copies == copies) {
+            iter->nsupport += 1;
+            found = TRUE;
+            break;
+        }
+    }    
+    if (found == FALSE) {
+        Copies* tmp = (Copies*)CkalloczOrDie(sizeof(Copies));
+        tmp->copies = copies;
+        tmp->nsupport = 1;
+        SllAddHead(&block->supports, tmp);
     }
-    if ((found == FALSE) && (j <= 2)) {
-        block->copies[j] = copies;
-        block->nsupport[j] += 1;
-    }
-    maxcopies = MAX(block->copies[0],block->copies[1]);
-
-    block->end = block->zstart + strlen(motif) * maxcopies;
+  
+    block->end = block->zstart + strlen(motif);
     block->slen = block->end + strlen(rseq);
     Ckfree(block->seq);
     block->seq = (char*)CkalloczOrDie(block->slen+1);
     memcpy(block->seq, lseq, block->zstart);
-    for (int i = 0; i < maxcopies; i++) {
-        sprintf(block->seq + block->zstart + (i * strlen(motif)), "%s", motif);
-    }
+    sprintf(block->seq + block->zstart, "%s", motif);
     memcpy(block->seq + block->end, rseq, block->slen - block->end);
     Ckfree(block->qual);
     block->qual = (char*)CkalloczOrDie(block->slen+1);
     memcpy(block->qual, lqual, block->zstart);
-    for (int i = 0; i < (strlen(motif) * maxcopies); i++) {
+    for (int i = 0; i < strlen(motif); i++) {
         sprintf(block->qual + block->zstart + i, "!");
     }
     memcpy(block->qual + block->end, rqual, block->slen - block->end);
@@ -363,7 +356,6 @@ static void MergeShortTandemRepeatReads(const uint klength,
         // Check if the sequence aligns to some reads that we have already
         // processed
         merged_block = FALSE;
-        int bsupport = 0;
           
         memcpy(lflank, sequence->bases + (fzstart - klength), klength);
         lflank[klength] = '\0';
@@ -372,12 +364,18 @@ static void MergeShortTandemRepeatReads(const uint klength,
         sprintf(buffer, "%s %s %s", fmotif, lflank, rflank);
         if (debug_flag) fprintf(stderr, "%s\n", buffer);
 
-        if (CheckInSparseWordHashMap(blocks, buffer) == TRUE) {
+        Bool in_hash = CheckInSparseWordHashMap(blocks, buffer);
+
+        if (in_hash == TRUE) {
             block = blocks[buffer];
-            bsupport = block->support;
-            merged_block = AlignFlanks(block, sequence, fmotif, fcopies, 
-                                       fzstart, fend, max_threshold);
-        }            
+            for (Block* iter = block; iter; iter = iter->next) {
+                merged_block = AlignFlanks(iter, sequence, fmotif, fcopies, 
+                                           fzstart, fend, max_threshold);
+                if (merged_block == TRUE) {
+                    break;
+                }
+            }
+        }
 
         if (merged_block == FALSE) {
             ReverseComplementSequence(sequence);
@@ -388,17 +386,21 @@ static void MergeShortTandemRepeatReads(const uint klength,
             sprintf(buffer, "%s %s %s", rmotif, lflank, rflank);
             if (debug_flag) fprintf(stderr, "%s\n", buffer);
 
-            if (CheckInSparseWordHashMap(blocks, buffer) == TRUE) {
+            in_hash = CheckInSparseWordHashMap(blocks, buffer);
+    
+            if (in_hash == TRUE) {
                 block = blocks[buffer];
-                if (block->support > bsupport) {
-                    bsupport = block->support;
+                for (Block* iter = block; iter; iter = iter->next) {
+                    merged_block = AlignFlanks(iter, sequence, rmotif, rcopies, 
+                                               rzstart, rend, max_threshold);
+                    if (merged_block == TRUE) {
+                        break;
+                    }
                 }
-                merged_block = AlignFlanks(block, sequence, rmotif, rcopies, 
-                                           rzstart, rend, max_threshold);
             }
         }
 
-        if ((merged_block == FALSE) && (bsupport < min_threshold)) {
+        if (merged_block == FALSE) {
             block = (Block*)CkalloczOrDie(sizeof(Block));
             block->zstart = rzstart;
             block->end = rend;
@@ -406,9 +408,16 @@ static void MergeShortTandemRepeatReads(const uint klength,
             block->support = 1;
             block->seq = CopyString(sequence->bases);
             block->qual = CopyString(sequence->quals);
-            block->copies[0] = rcopies;
-            block->nsupport[0] = 1;
-            blocks[CopyString(buffer)] = block;
+            block->supports = (Copies*)CkalloczOrDie(sizeof(Copies));
+            block->supports->copies = rcopies;
+            block->supports->nsupport = 1;
+
+            if (in_hash == TRUE) {
+                Block* head = blocks[buffer];
+                SllAddHead(&head, block); 
+            } else {
+                blocks[CopyString(buffer)] = block;
+            }
         }
 
         if (debug_flag) 
@@ -425,34 +434,42 @@ static void MergeShortTandemRepeatReads(const uint klength,
         if (sscanf((*it).first, "%s %*s %*s", fmotif) != 1) {
             PrintMessageThenDie("Error in parsing key : %s", (*it).first);
         }
+
         Block* block = (*it).second;
 
-        //fprintf(stderr, "%d\t%d,%d,%d\t%d,%d,%d\n", 
-        //    block->support,
-        //    block->copies[0],block->copies[1],block->copies[2],
-        //    block->nsupport[0],block->nsupport[1],block->nsupport[2]);
-        if ((block->support >= min_threshold) && 
-            (block->support <= max_threshold) && 
-            (block->copies[2] == 0) && 
-            (block->copies[1] != 0) && 
-            (block->nsupport[0] >= 2) && 
-            (block->nsupport[1] >= 2)) {
-            printf("@Block%d\t%s\t", bindex++, fmotif);
-            for (int i = 0; i < 3; i++) {
-                if (block->copies[i] != 0) {
-                    if (i != 0) printf (",");
-                    printf("%d",block->copies[i]);
+        for (Block* iter = block; iter; iter = iter->next) {
+            int i=0;
+            uint16_t copies[3];
+            copies[0] = copies[1] = copies[2] = 0;
+            uint16_t nsupport[3];
+            nsupport[0] = nsupport[1] = nsupport[2] = 0;
+            for (Copies* tmp = iter->supports; tmp; tmp=tmp->next) {
+                if (tmp->nsupport >= 2) {
+                    copies[i] = tmp->copies;
+                    nsupport[i] = tmp->nsupport;
+                    i++;
                 }
+                if (i == 3) break;
             }
-            printf("\t%d\t%d\n", block->zstart, block->end);
-            printf("%s\n", block->seq);
-            printf("+\n");
-            printf("%s\n", block->qual);
 
-            Ckfree(block->seq);
-            Ckfree(block->qual);
-            Ckfree(block);
+            if ((iter->support >= min_threshold) && 
+                (iter->support <= max_threshold) && 
+                (copies[2] == 0) && 
+                (copies[1] != 0)) {
+                printf("@Block%d\t%s\t", bindex++, fmotif);
+                printf("%d,%d",copies[0], copies[1]);
+                printf("\t%d\t%d\n", iter->zstart, iter->end);
+                printf("%s\n", iter->seq);
+                printf("+\n");
+                printf("%s\n", iter->qual);
+
+            }
+            Ckfree(iter->seq);
+            Ckfree(iter->qual);
+            SllFreeList(&(iter->supports));
         }
+
+        SllFreeList(&block);
     }
 }
 
