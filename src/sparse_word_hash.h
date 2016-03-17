@@ -23,6 +23,8 @@ typedef struct Copies_st
     struct Copies_st* next;
     uint16_t copies;
     uint16_t nsupport;
+    // char name1[1024];
+    // char name2[1024];
 } Copies;
 
 typedef struct Block_st

@@ -542,12 +542,12 @@ static char* ExtendBackward(SparseHashMap& kmers,
 
         // quit, if we have used this kmer for another STR
         ForceAssert(CheckKmerInSparseHashMap(kmers, extension) == TRUE);
-        if (kmers[extension].flag != 0) {
-            Ckfree(rvs);
-            Ckfree(fws);
-            return NULL;
-        }
-        kmers[extension].flag = 1;
+        // if (kmers[extension].flag != 0) {
+        //     Ckfree(rvs);
+        //     Ckfree(fws);
+        //     return NULL;
+        // }
+        // kmers[extension].flag = 1;
 
         if (rvflag == TRUE) {
             curr = extension;
@@ -692,12 +692,12 @@ static char* ExtendForward(SparseHashMap& kmers,
 
         // quit, if this extension has been used in some other STR
         ForceAssert(CheckKmerInSparseHashMap(kmers, extension) == TRUE);
-        if (kmers[extension].flag != 0) {
-            Ckfree(rvs);
-            Ckfree(fws);
-            return NULL;
-        }
-        kmers[extension].flag = 1; 
+        // if (kmers[extension].flag != 0) {
+        //     Ckfree(rvs);
+        //     Ckfree(fws);
+        //     return NULL;
+        // }
+        // kmers[extension].flag = 1; 
 
         if (rvflag == FALSE) {
             curr = extension;

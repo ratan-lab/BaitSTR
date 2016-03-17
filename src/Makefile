@@ -15,12 +15,12 @@ CPFLAGS += -g -ggdb -w
 CPFLAGS += -O3 
 
 # compile the version allowing upto 32mers
-all: install
+all: compile
 
 # compile the version allowing upto 64mers
 large: CFLAGS  += -DLarge 
 large: CPFLAGS += -DLarge 
-large: install
+large: compile
 
 .PHONY: clean archive
 
@@ -36,7 +36,7 @@ clean:
 	-rm merge_STR_reads
 	-rm extend_STR_reads
 
-install: fastq.pyx \
+compile: fastq.pyx \
 		 select_STR_reads select_STR_reads.pyx \
 		 utilities.h utilities.c \
 		 sllist.h sllist.c \

@@ -274,6 +274,7 @@ static Bool AlignFlanks(Block* const block,
         if (iter->copies == copies) {
             iter->nsupport += 1;
             found = TRUE;
+            // sprintf(iter->name2, "%s", seq->name);
             break;
         }
     }    
@@ -281,6 +282,7 @@ static Bool AlignFlanks(Block* const block,
         Copies* tmp = (Copies*)CkalloczOrDie(sizeof(Copies));
         tmp->copies = copies;
         tmp->nsupport = 1;
+        // sprintf(tmp->name1, "%s", seq->name);
         SllAddHead(&block->supports, tmp);
     }
   
@@ -411,6 +413,7 @@ static void MergeShortTandemRepeatReads(const uint klength,
             block->supports = (Copies*)CkalloczOrDie(sizeof(Copies));
             block->supports->copies = rcopies;
             block->supports->nsupport = 1;
+            // sprintf(block->supports->name1, "%s", sequence->name);
 
             if (in_hash == TRUE) {
                 Block* head = blocks[buffer];
@@ -439,6 +442,7 @@ static void MergeShortTandemRepeatReads(const uint klength,
 
         for (Block* iter = block; iter; iter = iter->next) {
             int i=0;
+            int maxcopies = 0;
             uint16_t copies[3];
             copies[0] = copies[1] = copies[2] = 0;
             uint16_t nsupport[3];
@@ -446,6 +450,7 @@ static void MergeShortTandemRepeatReads(const uint klength,
             for (Copies* tmp = iter->supports; tmp; tmp=tmp->next) {
                 if (tmp->nsupport >= 2) {
                     copies[i] = tmp->copies;
+                    if (copies[i] > maxcopies) maxcopies = copies[i];
                     nsupport[i] = tmp->nsupport;
                     i++;
                 }
@@ -458,11 +463,37 @@ static void MergeShortTandemRepeatReads(const uint klength,
                 (copies[1] != 0)) {
                 printf("@Block%d\t%s\t", bindex++, fmotif);
                 printf("%d,%d",copies[0], copies[1]);
-                printf("\t%d\t%d\n", iter->zstart, iter->end);
-                printf("%s\n", iter->seq);
-                printf("+\n");
-                printf("%s\n", iter->qual);
 
+                ForceAssert(iter->end == (iter->zstart + strlen(fmotif)));
+                printf("\t%d\t%d\n", iter->zstart, 
+                    iter->zstart + maxcopies * strlen(fmotif));
+
+                for (int j = 0; j < iter->zstart; j++) {
+                    printf("%c", iter->seq[j]);
+                }
+                for (int j = 0; j < maxcopies; j++) {
+                    printf("%s", fmotif);
+                }
+                for (int j = iter->end; j < iter->slen; j++) {
+                    printf("%c", iter->seq[j]);
+                }
+                printf("\n");
+                printf("+\n");
+                for (int j = 0; j < iter->zstart; j++) {
+                    printf("%c", iter->qual[j]);
+                }
+                for (int j = 0; j < (maxcopies * strlen(fmotif)); j++) {
+                    printf("!");
+                }
+                for (int j = iter->end; j < iter->slen; j++) {
+                    printf("%c", iter->qual[j]);
+                }
+                printf("\n");
+
+                // for (Copies* tmp = iter->supports; tmp; tmp=tmp->next) {
+                //    printf("%s\n", tmp->name1);
+                //    printf("%s\n", tmp->name2);
+                // }
             }
             Ckfree(iter->seq);
             Ckfree(iter->qual);
