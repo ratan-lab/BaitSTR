@@ -315,7 +315,8 @@ static void MergeShortTandemRepeatReads(const uint klength,
                                         const uint nameidx, 
                                         const uint progress_chunk,
                                         const uint min_threshold,
-                                        const uint max_threshold)
+                                        const uint max_threshold,
+                                        const Bool include_all)
 {
     uint64_t num_sequence_processed = 0;
 
@@ -458,42 +459,47 @@ static void MergeShortTandemRepeatReads(const uint klength,
             }
 
             if ((iter->support >= min_threshold) && 
-                (iter->support <= max_threshold) && 
-                (copies[2] == 0) && 
-                (copies[1] != 0)) {
-                printf("@Block%d\t%s\t", bindex++, fmotif);
-                printf("%d,%d",copies[0], copies[1]);
+                (iter->support <= max_threshold)) {
+                if ((!include_all && (copies[2] == 0) && (copies[1] != 0)) ||
+                    ( include_all && (copies[2] == 0))) {
+                    printf("@Block%d\t%s\t", bindex++, fmotif);
+                    if (include_all && copies[1] == 0) {
+                        printf("%d",copies[0]);
+                    } else {
+                        printf("%d,%d",copies[0], copies[1]);
+                    }
 
-                ForceAssert(iter->end == (iter->zstart + strlen(fmotif)));
-                printf("\t%d\t%d\n", iter->zstart, 
-                    iter->zstart + maxcopies * strlen(fmotif));
+                    ForceAssert(iter->end == (iter->zstart + strlen(fmotif)));
+                    printf("\t%d\t%d\n", iter->zstart, 
+                        iter->zstart + maxcopies * strlen(fmotif));
 
-                for (int j = 0; j < iter->zstart; j++) {
-                    printf("%c", iter->seq[j]);
-                }
-                for (int j = 0; j < maxcopies; j++) {
-                    printf("%s", fmotif);
-                }
-                for (int j = iter->end; j < iter->slen; j++) {
-                    printf("%c", iter->seq[j]);
-                }
-                printf("\n");
-                printf("+\n");
-                for (int j = 0; j < iter->zstart; j++) {
-                    printf("%c", iter->qual[j]);
-                }
-                for (int j = 0; j < (maxcopies * strlen(fmotif)); j++) {
-                    printf("!");
-                }
-                for (int j = iter->end; j < iter->slen; j++) {
-                    printf("%c", iter->qual[j]);
-                }
-                printf("\n");
+                    for (int j = 0; j < iter->zstart; j++) {
+                        printf("%c", iter->seq[j]);
+                    }
+                    for (int j = 0; j < maxcopies; j++) {
+                        printf("%s", fmotif);
+                    }
+                    for (int j = iter->end; j < iter->slen; j++) {
+                        printf("%c", iter->seq[j]);
+                    }
+                    printf("\n");
+                    printf("+\n");
+                    for (int j = 0; j < iter->zstart; j++) {
+                        printf("%c", iter->qual[j]);
+                    }
+                    for (int j = 0; j < (maxcopies * strlen(fmotif)); j++) {
+                        printf("!");
+                    }
+                    for (int j = iter->end; j < iter->slen; j++) {
+                        printf("%c", iter->qual[j]);
+                    }
+                    printf("\n");
 
-                // for (Copies* tmp = iter->supports; tmp; tmp=tmp->next) {
-                //    printf("%s\n", tmp->name1);
-                //    printf("%s\n", tmp->name2);
-                // }
+                    // for (Copies* tmp = iter->supports; tmp; tmp=tmp->next) {
+                    //    printf("%s\n", tmp->name1);
+                    //    printf("%s\n", tmp->name2);
+                    // }
+                }
             }
             Ckfree(iter->seq);
             Ckfree(iter->qual);
@@ -519,6 +525,8 @@ int main(int argc, char** argv) {
     "Discard blocks that include > max_threshold reads", NULL);
     AddOption(&cl_options, "progress", "1000000", TRUE, TRUE,
     "print progress every so many sequences", NULL);
+    AddOption(&cl_options, "all", "FALSE", FALSE, TRUE,
+    "include non-polymorphic blocks", NULL);
 
     ParseOptions(&cl_options, &argc, &argv);
 
@@ -555,6 +563,7 @@ int main(int argc, char** argv) {
     // kmers seen less than these many times should be ignored.
     uint min_threshold = GetOptionUintValueOrDie(cl_options, "min_threshold");
     uint max_threshold = GetOptionUintValueOrDie(cl_options, "max_threshold");
+    Bool include_all   = GetOptionBoolValueOrDie(cl_options, "all");
 
     // do I need additional debug info
     debug_flag = GetOptionBoolValueOrDie(cl_options, "debug");
@@ -568,7 +577,8 @@ int main(int argc, char** argv) {
                                 argc, 
                                 progress_chunk,
                                 min_threshold,
-                                max_threshold);
+                                max_threshold,
+                                include_all);
 
     FreeParseOptions(&cl_options, &argv);      
     return EXIT_SUCCESS;
