@@ -107,6 +107,7 @@ options:
     max_threshold  Discard blocks that include > max_threshold reads
                    [--max_threshold=10000]
     progress       print progress every so many sequences[--progress=1000000]
+    all            include non-polymorphic STRs in the output [--noall]
 ```
 
 - klength refers to the kmer length to be used.
