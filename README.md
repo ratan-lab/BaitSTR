@@ -21,13 +21,21 @@ BaitSTR is heavily borrowed from that.
 submodule.
 
 ## INSTALLATION
-Make sure you have installed Google Sparsehash before moving to the next step.
-zlib, python, gcc are normally pre-installed on most Linux systems. If not,
-please go ahead and install them as well.
 
-Modify the src/Makefile to add the Google Sparsehash header files to line 51
-after `-I`. Once that is done please do the following in the top level directory
-of the distribution:
+There are two ways of installing BaitSTR (a) cloning the repository from Github,
+(b) downloading a release from Github. Here we describe both methods:
+
+#### Cloning from Github
+
+git clone --recursive https://github.com/aakrosh/BaitSTR
+
+should download the required submodules along with the code required to compile
+BaitSTR components. 
+
+zlib, python, gcc are normally pre-installed on most Linux systems. If not,
+please go ahead and install them as well. Then please do the following in the 
+top level directory of the distribution:
+
 ```
 make && make install
 ```
@@ -39,7 +47,34 @@ fastq.so
 merge_STR_reads
 select_STR_reads
 select_STR_reads.so
+VERSION
 ```
+
+#### Downloading a release
+If you download a release from Github, it does not include Google Sparsehash. 
+Please install Google Sparsehash before moving to the next step. 
+
+zlib, python, gcc are normally pre-installed on most Linux systems. If not,
+please go ahead and install them as well.
+
+Modify the src/Makefile to add the Google Sparsehash header files to line 64,70
+after `-I`. Once that is done please do the following in the top level directory
+of the distribution:
+
+```
+make && make install
+```
+This should create a `bin` folder and copy all the required binaries to it.
+Please make sure that following files are in the `bin` folder:
+```
+extend_STR_reads
+fastq.so
+merge_STR_reads
+select_STR_reads
+select_STR_reads.so
+VERSION
+```
+
 ## DESCRIPTION
 BaitSTR consists of 3 modules that should be run sequentially to find exact STR's
 along with their flanking bases. Here we describe the 3 modules and the general
