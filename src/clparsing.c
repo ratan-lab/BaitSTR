@@ -3,9 +3,7 @@
 extern char* program_name;
 extern char* program_description;
 extern char* program_use;
-extern char* program_version_major;
-extern char* program_version_minor;
-extern char* program_revision_date;
+extern char* program_version;
 
 // create a new structure to hold the arguments.
 CommandLineArguments* NewCommandLineArguments() {
@@ -261,8 +259,7 @@ void ParseOptions(CommandLineArguments** const pArguments,
 // print the usage string associated with this program.
 void PrintSimpleUsageString(const CommandLineArguments* const arguments) {
     printf("Program : %s (%s)\n", program_name, program_description);
-    printf("Version : %s.%s released %s\n\n",
-    program_version_major, program_version_minor, program_revision_date);
+    printf("Version : %s\n\n", program_version);
 
     printf("usage:\n");
     printf("\t%s\n\n", program_use);

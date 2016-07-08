@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-
-"""Select and annotate reads that harbor a short tandem repeat.
+"""
+Select and annotate reads that harbor a short tandem repeat.
+Version: %(scriptVersion)s
 
     usage:
         select_STR_reads [options] reads1.fq reads2.fq ...
-
+        
     where the options are:
         -h,--help : print usage and quit.
         -n,--numcopies: require at least this number of copies. [2]
@@ -54,23 +55,26 @@
                  reason why they were not selected by this script.
 """
 
-from sys import argv, stderr, stdin, exit, stdout
+from sys import argv, stderr, stdin, exit, stdout, path
 from getopt import getopt, GetoptError
 
 from select_STR_reads import *
 
 __author__ = "Aakrosh Ratan"
-__email__  = "ratan@bx.psu.edu"
+__email__  = "ratan@virginia.edu"
 
 # Do we want the debug information to be printed?
 debug_flag = False
 
 if __name__ == "__main__":
+    with open(path[0]+'/VERSION',"r") as version_file:
+        version = version_file.read().strip()
+
     try:
         opts, args = getopt(argv[1:], "hdn:f:ic:v23456rxp:s:",["help", "debug", "numcopies=", "flanks=", "illumina", "check=", "version", "2mer", "3mer", "4mer", "5mer", "6mer", "removehm", "altalgo", "numprocesses=", "chunksize="])
     except GetoptError, err:
         print str(err)
-        print >> stderr, __doc__
+        print >> stderr, __doc__ % {'scriptVersion' : version}
         exit(2) 
 
     num_minimum_copies = 2
@@ -87,7 +91,7 @@ if __name__ == "__main__":
 
     for o, a in opts:
         if o in ("-h", "--help"):
-            print >> stderr, __doc__
+            print >> stderr, __doc__ % {'scriptVersion' : version}
             exit()
         elif o in ("-d", "--debug"):
             debug_flag = True
@@ -119,12 +123,12 @@ if __name__ == "__main__":
     # Do we want to print the version and quit?
     if print_version == True:
         print >> stderr, "Program: select_STR_reads"
-        print >> stderr, "Version: 0.3 released 20160217"
+        print >> stderr, "Version: %s" % version
         print >> stderr, "Contact: Aakrosh Ratan (ratan@bx.psu.edu)"
         exit(0)
 
     if len(args) < 1:
-        print >> stderr, __doc__
+        print >> stderr, __doc__ % {'scriptVersion' : version}
         exit(3)
 
     only_k_mer = list(set(only_k_mer))

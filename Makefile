@@ -8,6 +8,7 @@ install:
 	cp src/select_STR_reads  bin/
 	cp src/merge_STR_reads  bin/
 	cp src/extend_STR_reads  bin/
+	cp src/VERSION bin/
 
 clean:
 	-rm -rf bin

@@ -13,9 +13,7 @@ extern "C" {
 
 #include "sparse_kmer_hash.h"
 
-char* program_version_major = "0";
-char* program_version_minor = "30";
-char* program_revision_date = "20140909";
+char* program_version       = "";
 char* program_name          = "extend_STR_reads";
 char* program_description   = 
     "Extend fastq reads based on the kmer structure";
@@ -982,6 +980,9 @@ TRUE) < 95.00)) {
 int main(int argc, char** argv) {
     // start time management
     t0 = time(0);
+
+    // set the version number
+    program_version = VERSION;
 
     // parse the command line
     CommandLineArguments* cl_options = NewCommandLineArguments();

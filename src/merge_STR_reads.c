@@ -13,9 +13,7 @@ extern "C" {
 
 #include "sparse_word_hash.h"
 
-char* program_version_major = "0";
-char* program_version_minor = "30";
-char* program_revision_date = "20160218";
+char* program_version       = "";
 char* program_name          = "merge_STR_reads";
 char* program_description   = 
     "Merge reads that support the same STR";
@@ -514,6 +512,9 @@ static void MergeShortTandemRepeatReads(const uint klength,
 int main(int argc, char** argv) {
     // start time management
     t0 = time(0);
+
+    // set the version number
+    program_version = VERSION;
 
     // parse the command line
     CommandLineArguments* cl_options = NewCommandLineArguments();

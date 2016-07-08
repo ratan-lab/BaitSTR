@@ -59,13 +59,13 @@ compile: fastq.pyx \
 	$(CC)  $(CFLAGS) -c murmur_hash.c
 	$(CC)  $(CFLAGS) -c bloom_filter.c
 	$(CC)  $(CFLAGS) -c fastq_seq.c
-	$(CC1) $(CPFLAGS)  \
+	$(CC1) $(CPFLAGS) -D'VERSION="$(shell cat VERSION .)"' \
 		-o merge_STR_reads \
 		-Isparsehash/src \
         utilities.o sllist.o clparsing.o kmer.o murmur_hash.o bloom_filter.o \
 	    fastq_seq.o \
 		merge_STR_reads.c -lz -lm
-	$(CC1) $(CPFLAGS)  \
+	$(CC1) $(CPFLAGS) -D'VERSION="$(shell cat VERSION .)"' \
 		-o extend_STR_reads \
 		-Isparsehash/src \
         utilities.o sllist.o clparsing.o kmer.o murmur_hash.o bloom_filter.o \
