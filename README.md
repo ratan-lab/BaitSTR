@@ -259,7 +259,12 @@ This runs the following command
 ```
 This module analyzes the results of the previous step and attempts to merge
 reads that support the same STR. The merged reads are now stored in a fastq file
-merged.reads.str.fq 
+merged.reads.str.fq. The expected output here is a single polymorphic STR
+location represented by a fastq read. If you want to look at all the STR
+locations including the non-polymorphic locations, then add the '--all' switch
+to merge_STR_reads command line. The new line in the Makefile should be 
+
+$C/merge_STR_reads --all 27 reads.str.fq > merged.reads.str.fq
 ```
 make extend_strs
 ```
@@ -275,5 +280,5 @@ merged.reads.str.fq. The names of the contigs contain a unique identifier, the
 motif that is repeated in the STR, the  0-based [start,end) coordinates for the
 STR in the contig.
 
-The expected output should contain 3 contigs, each one containing the flanking
-region around a motif in the dataset.
+The expected output should contain 1 contig, containing the flanking region 
+around a motif in the dataset.

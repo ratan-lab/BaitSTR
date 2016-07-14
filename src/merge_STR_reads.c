@@ -426,6 +426,7 @@ static void MergeShortTandemRepeatReads(const uint klength,
             fprintf(stderr, "-----------------------------------------------\n");
         sequence = GetNextSequence(sequence);
     }
+    PrintDebugMessage("Processed %"PRIu64" reads.", num_sequence_processed);
 
     Ckfree(buffer);
 
