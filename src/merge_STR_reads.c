@@ -348,7 +348,7 @@ static void MergeShortTandemRepeatReads(const uint klength,
         
         // parse the name of the read.
         if (sscanf(sequence->name,
-                   "%s\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\n",
+                   "%[^\t]\t%s\t%d\t%d\t%d\t%s\t%d\t%d\t%d\n",
                    name, fmotif, &fcopies, &fzstart, &fend, 
                    rmotif, &rcopies, &rzstart, &rend) != 9) {
             PrintMessageThenDie("Error in parsing read name %s",sequence->name);
