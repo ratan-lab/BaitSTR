@@ -1013,7 +1013,7 @@ int main(int argc, char** argv) {
     }
 
     // does the user know what he/she is doing?
-    if (argc < 4){
+    if (argc < 7){
         PrintSimpleUsageString(cl_options);
         return EXIT_FAILURE;
     }
@@ -1026,7 +1026,7 @@ int main(int argc, char** argv) {
 
     uint expected_coverage;
     if (sscanf(argv[2], "%u", &expected_coverage) != 1) {
-        PrintMessageThenDie("Expected genome size should be an integer: %s",
+        PrintMessageThenDie("Expected coverage should be an integer: %s",
         argv[2]);
     } 
 
