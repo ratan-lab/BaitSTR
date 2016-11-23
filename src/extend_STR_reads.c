@@ -846,6 +846,16 @@ static uint FindFirstGoodKmer(SparseHashMap& kmers,
     return result;
 }
 
+static void IssueWarningAboutKmerLength(const uint kmer_length)
+{
+    fprintf(stderr, "\n==========================================================================\n");
+    fprintf(stderr, "Please note:\n");
+    fprintf(stderr, "Kmer length %u for extension is greater than the flank requirement used for \n", kmer_length);
+    fprintf(stderr, "STR discovery in select_STR_reads. This can lead to some blocks being ignored\n");
+    fprintf(stderr, "during extension.\n");
+    fprintf(stderr, "============================================================================\n\n");
+}
+
 /*
  * Assumptions and notes:
  *  a) We use a combination of a hash table and a bloom filter to select kmers 
@@ -912,7 +922,8 @@ static void ExtendShortTandemRepeatReads(const uint64_t haploid_genome_size,
     int zstart, end;
     char* lflank = NULL;
     char* rflank = NULL;
-    
+    Bool extensionWarningSet = FALSE;
+    uint64_t numNotExtended = 0;
 
     while (sequence) {
         lflank = NULL;
@@ -928,23 +939,33 @@ static void ExtendShortTandemRepeatReads(const uint64_t haploid_genome_size,
         
 
         // lets see if we can extend this read towards the 5' end.
-        ForceAssert(kmer_length <= zstart);
-        indx1 = FindFirstGoodKmer(kmers, 
-                                  sequence->bases, 
-                                  zstart - kmer_length + 1, 
-                                  TRUE,
-                                  kmer_length);
-        lflank = ExtendBackward(kmers, sequence->bases, indx1, kmer_length);
-        
-        // does this extension look correct?
-        if ((lflank == NULL) || (PercentIdentity(lflank, sequence->bases, indx1,
-TRUE) < 95.00)) {
-            goto next;
+        if (kmer_length > zstart) {
+            // this block cannot be extended on this side
+            indx1 = 0;
+            numNotExtended++;
+            if (extensionWarningSet == FALSE) {
+                IssueWarningAboutKmerLength(kmer_length);
+                extensionWarningSet = TRUE;
+            }
+        } else {
+            indx1 = FindFirstGoodKmer(kmers, 
+                                      sequence->bases, 
+                                      zstart - kmer_length + 1, 
+                                      TRUE,
+                                      kmer_length);
+            lflank = ExtendBackward(kmers, sequence->bases, indx1, kmer_length);
+            
+            // does this extension look correct?
+            if ((lflank == NULL) || 
+                (PercentIdentity(lflank, sequence->bases, indx1, TRUE) < 95.00)){
+                goto next;
+            }
         }
     
         // Lets see if we can extend this reads towards the 3' end.
         if ((sequence->slen - end) < kmer_length) {
             indx2 = 0;
+            numNotExtended++;
         } else {
             indx2 = FindFirstGoodKmer(kmers, 
                                  sequence->bases + end, 
@@ -975,6 +996,13 @@ TRUE) < 95.00)) {
     
     CloseFastqSequence(sequence);
     PrintDebugMessage("Done with all extensions in %s", fqname);
+
+    if (extensionWarningSet == TRUE) {
+        fprintf(stderr, "\n==========================================================================\n");
+        fprintf(stderr, "%"PRIu64" ends of merged reads were not extended as the kmer length for extension \n", numNotExtended);
+        fprintf(stderr, "is greater than the flank requirement used for STR discovery in select_STR_reads\n");
+        fprintf(stderr, "\n==========================================================================\n");
+    }
 }
 
 int main(int argc, char** argv) {

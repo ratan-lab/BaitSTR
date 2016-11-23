@@ -184,7 +184,10 @@ Extend fastq reads based on the kmer structure from Illumina reads.
 - gs is the expected genome size of the sample.
 - klen refers to the kmer length that should be used. It should be <= the size
   of the flanks in the input file reads.str.fq (which would be at least equal 
-  to the value of the argument -f for select_STR_reads).
+  to the value of the argument -f for select_STR_reads). If the user chooses 
+  a klen greater than the size of the flanks, then the program issues a 
+  warning, and ignores blocks where the STR is located such that a kmer not 
+  inclusing the STR cannot be identified at the edge of the merged read.
   str.reads.fq is the output from merge_STR_reads.
 - reads1.fq, reads2.fq, ... are all files in FASTQ format which contain the
   reads from a single sample.
